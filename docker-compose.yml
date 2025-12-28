@@ -1,0 +1,29 @@
+services:
+  # Database Service
+  postgres:
+    image: postgres:15-alpine
+    container_name: retail-engine-db
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: default_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    command: > # Initialize multiple databases on startup
+      sh -c "docker-entrypoint.sh postgres &
+      sleep 5;
+      for db in user_db product_db inventory_db order_db; do
+        psql -U admin -d default_db -c \"CREATE DATABASE $$db;\" || true;
+      done;
+      wait"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d default_db"] # Check if Postgres is ready
+      interval: 10s # Check every 10 seconds
+      timeout: 5s # Timeout after 5 seconds
+      retries: 5 # Retry up to 5 times
+      start_period: 20s # Wait 20 seconds before starting health checks
+
+volumes:
+  postgres_data:
