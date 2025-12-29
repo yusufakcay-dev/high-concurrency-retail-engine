@@ -4,26 +4,64 @@ services:
     image: postgres:15-alpine
     container_name: retail-engine-db
     environment:
+      POSTGRES_DB: default_db
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: password
-      POSTGRES_DB: default_db
-    ports:
-      - "5432:5432"
+    ports: ["5432:5432"]
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-    command: > # Initialize multiple databases on startup
-      sh -c "docker-entrypoint.sh postgres &
-      sleep 5;
-      for db in user_db product_db inventory_db order_db; do
-        psql -U admin -d default_db -c \"CREATE DATABASE $$db;\" || true;
-      done;
-      wait"
+      - "postgres_data:/var/lib/postgresql/data"
+      - "./infrastructure/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql"
+    networks: [backend]
+
+  # User Service
+  user-service:
+    build:
+      context: ./services/user-service
+      dockerfile: Dockerfile
+    container_name: user-service
+    depends_on: [postgres]
+    environment:
+      SERVER_PORT: 8082
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/user_db
+      SPRING_DATASOURCE_USERNAME: admin
+      SPRING_DATASOURCE_PASSWORD: password
+      JWT_SECRET: ${JWT_SECRET:-d5R8C0pu0rJkqby030wx7pC2ayTrK8pSSdYOh0qqIAfRQeXEX0lLJwH10+omT1aDafAvAWewaVmef3ZwB9yQ4A==}
+    networks: [backend]
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin -d default_db"] # Check if Postgres is ready
-      interval: 10s # Check every 10 seconds
-      timeout: 5s # Timeout after 5 seconds
-      retries: 5 # Retry up to 5 times
-      start_period: 20s # Wait 20 seconds before starting health checks
+      test:
+        [
+          "CMD-SHELL",
+          "curl -fsS http://localhost:8082/actuator/health || exit 1",
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 20
+      start_period: 20s
+
+  # API Gateway Service
+  gateway-service:
+    build:
+      context: ./services/gateway-service
+      dockerfile: Dockerfile
+    container_name: gateway-service
+    depends_on: [user-service]
+    environment:
+      JWT_SECRET: ${JWT_SECRET:-d5R8C0pu0rJkqby030wx7pC2ayTrK8pSSdYOh0qqIAfRQeXEX0lLJwH10+omT1aDafAvAWewaVmef3ZwB9yQ4A==}
+    ports: ["8080:8080"]
+    networks: [backend]
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -fsS http://localhost:8080/actuator/health || exit 1",
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 20
+
+networks:
+  backend:
+    driver: bridge
 
 volumes:
   postgres_data:

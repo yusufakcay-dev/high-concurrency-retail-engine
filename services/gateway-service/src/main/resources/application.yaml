@@ -1,0 +1,48 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: gateway-service
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: user-service-docs
+              uri: http://user-service:8082
+              predicates:
+                - Path=/user-service/**
+              filters:
+                - StripPrefix=1
+            - id: user-service-auth
+              uri: http://user-service:8082
+              predicates:
+                - Path=/auth/**
+            - id: user-service-me
+              uri: http://user-service:8082
+              predicates:
+                - Path=/user/**
+              filters:
+                - AuthenticationFilter
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    urls:
+      - name: User Service
+        url: /user-service/v3/api-docs
+
+application:
+  security:
+    jwt:
+      secret: ${JWT_SECRET:mysupersecretkeythatisatleast32characterslong1234567890}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always

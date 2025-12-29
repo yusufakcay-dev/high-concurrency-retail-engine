@@ -4,13 +4,11 @@ server:
 spring:
   application:
     name: user-service
-
   datasource:
-    url: jdbc:postgresql://localhost:5432/user_db
-    username: admin
-    password: password
+    url: ${USER_SERVICE_DB_URL:jdbc:postgresql://localhost:5432/user_db}
+    username: ${USER_SERVICE_DB_USERNAME:admin}
+    password: ${USER_SERVICE_DB_PASSWORD:password}
     driver-class-name: org.postgresql.Driver
-
   jpa:
     hibernate:
       ddl-auto: update
@@ -18,3 +16,19 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
+
+application:
+  security:
+    jwt:
+      secret: ${JWT_SECRET:mysupersecretkeythatisatleast32characterslong1234567890}
+
+management:
+  endpoints:
+    web.exposure.include: health
+  endpoint.health.show-details: always
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
