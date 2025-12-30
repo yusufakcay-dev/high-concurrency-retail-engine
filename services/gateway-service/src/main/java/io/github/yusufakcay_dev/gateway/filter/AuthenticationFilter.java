@@ -6,6 +6,7 @@ import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
@@ -43,15 +44,26 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
                     // Validate token
                     jwtUtil.validateToken(token);
 
-                    // Extract username from token
+                    // Extract username and role from token
                     String username = jwtUtil.extractUsername(token);
+                    String role = jwtUtil.extractRole(token);
 
-                    // Add username as header for downstream services
+                    // Enforce ADMIN role for POST to products at gateway level
+                    if (exchange.getRequest().getMethod() == HttpMethod.POST
+                            && exchange.getRequest().getURI().getPath().startsWith("/products")) {
+                        if (role == null || !role.equals("ADMIN")) {
+                            log.warn("Forbidden: Non-admin user {} attempted POST to products", username);
+                            return onError(exchange, "Access Denied: Admin only", HttpStatus.FORBIDDEN);
+                        }
+                    }
+
+                    // Pass user info to downstream services
                     exchange = exchange.mutate()
-                            .request(r -> r.header("X-User-Name", username))
+                            .request(r -> r.header("X-User-Name", username)
+                                    .header("X-User-Role", role))
                             .build();
 
-                    log.info("Authenticated user: {}", username);
+                    log.debug("Authenticated user: {} with role: {}", username, role);
                 } catch (Exception e) {
                     log.error("JWT validation failed: {}", e.getMessage());
                     return onError(exchange, "Invalid or expired token", HttpStatus.UNAUTHORIZED);

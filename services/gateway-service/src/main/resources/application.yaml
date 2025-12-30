@@ -25,6 +25,18 @@ spring:
                 - Path=/user/**
               filters:
                 - AuthenticationFilter
+            - id: product-service-docs
+              uri: http://product-service:8081
+              predicates:
+                - Path=/product-service/**
+              filters:
+                - StripPrefix=1
+            - id: product-service
+              uri: http://product-service:8081
+              predicates:
+                - Path=/products/**
+              filters:
+                - AuthenticationFilter
 
 springdoc:
   swagger-ui:
@@ -32,6 +44,8 @@ springdoc:
     urls:
       - name: User Service
         url: /user-service/v3/api-docs
+      - name: Product Service
+        url: /product-service/v3/api-docs
 
 application:
   security:
