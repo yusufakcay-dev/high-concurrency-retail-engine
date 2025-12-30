@@ -1,0 +1,26 @@
+spring:
+  application:
+    name: inventory-service
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+  kafka:
+    bootstrap-servers: localhost:9092
+
+server:
+  port: 8083
+
+app:
+  topics:
+    product-created: product-created-topic
+
+logging:
+  level:
+    io.github.yusufakcay_dev: DEBUG
+    org.springframework.kafka: WARN

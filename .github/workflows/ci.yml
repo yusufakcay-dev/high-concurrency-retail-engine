@@ -49,6 +49,10 @@ jobs:
         working-directory: ./services/user-service
         run: mvn clean test
 
+      - name: Test Inventory Service
+        working-directory: ./services/inventory-service
+        run: mvn clean test
+
       - name: Upload Test Reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -82,6 +86,10 @@ jobs:
         working-directory: ./services/user-service
         run: docker build -t user-service:test .
 
+      - name: Build Inventory Service
+        working-directory: ./services/inventory-service
+        run: docker build -t inventory-service:test .
+
   integration-test:
     name: Integration Tests - Docker Compose
     runs-on: ubuntu-latest
@@ -105,10 +113,11 @@ jobs:
             gateway_health=$(docker inspect --format='{{.State.Health.Status}}' gateway-service 2>/dev/null || echo "unknown")
             product_health=$(docker inspect --format='{{.State.Health.Status}}' product-service 2>/dev/null || echo "unknown")
             user_health=$(docker inspect --format='{{.State.Health.Status}}' user-service 2>/dev/null || echo "unknown")
+            inventory_health=$(docker inspect --format='{{.State.Health.Status}}' inventory-service 2>/dev/null || echo "unknown")
             
-            echo "Gateway: $gateway_health | Product: $product_health | User: $user_health"
+            echo "Gateway: $gateway_health | Product: $product_health | User: $user_health | Inventory: $inventory_health"
             
-            if [ "$gateway_health" = "healthy" ] && [ "$product_health" = "healthy" ] && [ "$user_health" = "healthy" ]; then
+            if [ "$gateway_health" = "healthy" ] && [ "$product_health" = "healthy" ] && [ "$user_health" = "healthy" ] && [ "$inventory_health" = "healthy" ]; then
               echo "✅ All services are healthy!"
               exit 0
             fi
@@ -151,6 +160,16 @@ jobs:
             exit 1
           fi
 
+      - name: Test Inventory Service Health
+        run: |
+          response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8083/actuator/health)
+          if [ "$response" -eq 200 ]; then
+            echo "✅ Inventory service health check passed"
+          else
+            echo "❌ Inventory service health check failed with status $response"
+            exit 1
+          fi
+
       - name: Show logs on failure
         if: failure()
         run: |
@@ -160,6 +179,8 @@ jobs:
           docker logs product-service --tail 100
           echo "=== User Service Logs ==="
           docker logs user-service --tail 100
+          echo "=== Inventory Service Logs ==="
+          docker logs inventory-service --tail 100
 
       - name: Cleanup
         if: always()

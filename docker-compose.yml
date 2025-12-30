@@ -67,13 +67,38 @@ services:
       retries: 20
       start_period: 20s
 
+  # Inventory Service
+  inventory-service:
+    build:
+      context: ./services/inventory-service
+      dockerfile: Dockerfile
+    container_name: inventory-service
+    depends_on: [postgres, kafka]
+    environment:
+      SERVER_PORT: 8083
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/inventory_db
+      SPRING_DATASOURCE_USERNAME: admin
+      SPRING_DATASOURCE_PASSWORD: password
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    networks: [backend]
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -fsS http://localhost:8083/api/actuator/health || exit 1",
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 20
+      start_period: 20s
+
   # API Gateway Service
   gateway-service:
     build:
       context: ./services/gateway-service
       dockerfile: Dockerfile
     container_name: gateway-service
-    depends_on: [user-service]
+    depends_on: [user-service, inventory-service]
     environment:
       JWT_SECRET: ${JWT_SECRET:-d5R8C0pu0rJkqby030wx7pC2ayTrK8pSSdYOh0qqIAfRQeXEX0lLJwH10+omT1aDafAvAWewaVmef3ZwB9yQ4A==}
     ports: ["8080:8080"]
@@ -110,7 +135,7 @@ services:
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
     networks: [backend]
     healthcheck:
