@@ -74,6 +74,7 @@ services:
       dockerfile: Dockerfile
     container_name: inventory-service
     depends_on: [postgres, kafka]
+    ports: ["8083:8083"]
     environment:
       SERVER_PORT: 8083
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/inventory_db

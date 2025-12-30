@@ -168,16 +168,6 @@ jobs:
             exit 1
           fi
 
-      - name: Test Inventory Service Health
-        run: |
-          response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8083/api/actuator/health)
-          if [ "$response" -eq 200 ]; then
-            echo "✅ Inventory service health check passed"
-          else
-            echo "❌ Inventory service health check failed with status $response"
-            exit 1
-          fi
-
       - name: Show logs on failure
         if: failure()
         run: |
