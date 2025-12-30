@@ -52,6 +52,7 @@ jobs:
       - name: Test Inventory Service
         working-directory: ./services/inventory-service
         run: mvn clean test
+        # TestContainers will use Docker on ubuntu-latest to run PostgreSQL and Kafka integration tests
 
       - name: Upload Test Reports
         if: always()
