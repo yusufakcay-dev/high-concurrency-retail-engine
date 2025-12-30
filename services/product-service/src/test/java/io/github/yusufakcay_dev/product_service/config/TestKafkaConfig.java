@@ -22,15 +22,15 @@ public class TestKafkaConfig {
     public KafkaTemplate<String, ProductCreatedEvent> kafkaTemplate() {
         @SuppressWarnings("unchecked")
         KafkaTemplate<String, ProductCreatedEvent> mockTemplate = mock(KafkaTemplate.class);
-        
+
         // Mock the send method to return a completed future
         @SuppressWarnings("unchecked")
-        CompletableFuture<SendResult<String, ProductCreatedEvent>> future = 
-            CompletableFuture.completedFuture(mock(SendResult.class));
-        
+        CompletableFuture<SendResult<String, ProductCreatedEvent>> future = CompletableFuture
+                .completedFuture(mock(SendResult.class));
+
         when(mockTemplate.send(anyString(), anyString(), any(ProductCreatedEvent.class)))
-            .thenReturn(future);
-        
+                .thenReturn(future);
+
         return mockTemplate;
     }
 }
