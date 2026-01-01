@@ -3,6 +3,7 @@ package io.github.yusufakcay_dev.payment_service.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.stripe.exception.SignatureVerificationException;
 import com.stripe.model.Event;
+import com.stripe.model.PaymentIntent;
 import com.stripe.model.checkout.Session;
 import com.stripe.net.Webhook;
 import io.github.yusufakcay_dev.payment_service.dto.PaymentRequest;
@@ -79,7 +80,7 @@ public class InternalPaymentController {
         }
 
         try {
-            // We only care about checkout.session events
+            // Handle checkout.session events (successful payments)
             if (event.getType().startsWith("checkout.session")) {
                 // Extract session data using Stripe API
                 com.stripe.model.StripeObject stripeObject = event.getData().getObject();
@@ -107,6 +108,35 @@ public class InternalPaymentController {
                 paymentService.handleStripeWebhook(webhookEvent);
 
                 log.info("Webhook processed successfully: {}", event.getType());
+                return ResponseEntity.ok("Webhook processed");
+            }
+            // Handle payment_intent.payment_failed events
+            else if ("payment_intent.payment_failed".equals(event.getType())) {
+                com.stripe.model.StripeObject stripeObject = event.getData().getObject();
+
+                if (!(stripeObject instanceof com.stripe.model.PaymentIntent)) {
+                    log.warn("Event data is not a PaymentIntent object");
+                    return ResponseEntity.ok("Unexpected object type");
+                }
+
+                com.stripe.model.PaymentIntent paymentIntent = (com.stripe.model.PaymentIntent) stripeObject;
+
+                // Convert to our internal DTO
+                StripeWebhookEvent webhookEvent = StripeWebhookEvent.builder()
+                        .type(event.getType())
+                        .data(StripeWebhookEvent.StripeData.builder()
+                                .object(StripeWebhookEvent.StripeObject.builder()
+                                        .id(paymentIntent.getId())
+                                        .paymentStatus("failed")
+                                        .customerEmail(null)
+                                        .build())
+                                .build())
+                        .build();
+
+                // Process the webhook
+                paymentService.handlePaymentIntentFailed(webhookEvent);
+
+                log.info("Payment intent failed webhook processed: {}", paymentIntent.getId());
                 return ResponseEntity.ok("Webhook processed");
             } else {
                 log.info("Ignoring webhook event type: {}", event.getType());

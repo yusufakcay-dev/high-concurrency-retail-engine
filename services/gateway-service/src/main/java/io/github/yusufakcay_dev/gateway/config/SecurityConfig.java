@@ -18,13 +18,15 @@ public class SecurityConfig {
                                                                 "/swagger-ui.html", "/swagger-ui/**", "/webjars/**",
                                                                 "/v3/api-docs/**", "/user-service/v3/api-docs/**",
                                                                 "/product-service/v3/api-docs/**",
+                                                                "/inventory-service/v3/api-docs/**",
                                                                 "/order-service/v3/api-docs/**",
                                                                 "/auth/**", "/user-service/auth/**", "/user/me",
                                                                 "/user-service/user/me",
                                                                 "/products", "/products/**",
                                                                 "/api/orders", "/api/orders/**",
                                                                 "/actuator/health", "/actuator/health/**",
-                                                                "/actuator/info")
+                                                                "/actuator/info", "/api/inventories/**",
+                                                                "/inventories/**", "/api/inventory/")
                                                 .permitAll()
                                                 .anyExchange().authenticated())
                                 .httpBasic(ServerHttpSecurity.HttpBasicSpec::disable);

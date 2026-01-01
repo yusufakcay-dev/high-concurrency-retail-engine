@@ -14,6 +14,9 @@ import io.github.yusufakcay_dev.payment_service.repository.PaymentRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.UUID;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
@@ -157,5 +160,79 @@ public class PaymentService {
         // Publish to Kafka for Order Service to consume
         kafkaTemplate.send(PAYMENT_RESULT_TOPIC, payment.getOrderId().toString(), resultEvent);
         log.info("Payment result event published to Kafka for order: {}", payment.getOrderId());
+    }
+
+    /**
+     * Handle payment_intent.payment_failed webhook events
+     * When a card is declined during checkout, Stripe sends this event
+     */
+    @Transactional
+    public void handlePaymentIntentFailed(StripeWebhookEvent event) {
+        log.info("Received payment_intent.payment_failed webhook");
+
+        String paymentIntentId = event.getData().getObject().getId();
+
+        Payment payment = null;
+
+        try {
+            // Retrieve the PaymentIntent from Stripe to get the checkout session ID
+            com.stripe.model.PaymentIntent paymentIntent = com.stripe.model.PaymentIntent.retrieve(paymentIntentId);
+
+            // The PaymentIntent has metadata or you can find it via the latest_charge
+            // Look for the checkout session in the PaymentIntent's metadata or invoice
+            if (paymentIntent.getMetadata() != null && paymentIntent.getMetadata().containsKey("orderId")) {
+                String orderId = paymentIntent.getMetadata().get("orderId");
+                log.info("Found orderId in PaymentIntent metadata: {}", orderId);
+                payment = paymentRepository.findByOrderId(UUID.fromString(orderId))
+                        .orElse(null);
+            }
+
+            // If not found via metadata, try to find by the latest charge's invoice or
+            // receipt
+            // Alternatively, search for any pending payment (last resort)
+            if (payment == null) {
+                log.warn("Could not find payment by metadata, searching for latest pending payment");
+                payment = paymentRepository.findAll().stream()
+                        .filter(p -> p.getStatus() == PaymentStatus.PENDING)
+                        .max((p1, p2) -> p1.getCreatedAt().compareTo(p2.getCreatedAt()))
+                        .orElse(null);
+            }
+
+        } catch (Exception e) {
+            log.error("Error retrieving PaymentIntent from Stripe: {}", e.getMessage());
+            // Fallback to finding latest pending payment
+            payment = paymentRepository.findAll().stream()
+                    .filter(p -> p.getStatus() == PaymentStatus.PENDING)
+                    .max((p1, p2) -> p1.getCreatedAt().compareTo(p2.getCreatedAt()))
+                    .orElse(null);
+        }
+
+        if (payment == null) {
+            log.error("No pending payment found for PaymentIntent: {}", paymentIntentId);
+            return;
+        }
+
+        if (payment.getStatus() != PaymentStatus.PENDING) {
+            log.warn("Payment {} already processed, skipping", payment.getId());
+            return;
+        }
+
+        // Mark payment as failed
+        payment.setStatus(PaymentStatus.FAILED);
+        payment.setFailureReason("Card declined or payment failed");
+        log.info("Payment {} marked as FAILED due to payment_intent.payment_failed", payment.getId());
+
+        paymentRepository.save(payment);
+
+        // Publish failure event to Kafka
+        PaymentResultEvent resultEvent = PaymentResultEvent.builder()
+                .paymentId(payment.getId().toString())
+                .orderId(payment.getOrderId())
+                .status("FAILED")
+                .failureReason("Card declined or payment failed")
+                .build();
+
+        kafkaTemplate.send(PAYMENT_RESULT_TOPIC, payment.getOrderId().toString(), resultEvent);
+        log.info("Payment failure event published to Kafka for order: {}", payment.getOrderId());
     }
 }

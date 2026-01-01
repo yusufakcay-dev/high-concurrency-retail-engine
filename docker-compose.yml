@@ -30,7 +30,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/user_db
       SPRING_DATASOURCE_USERNAME: admin
       SPRING_DATASOURCE_PASSWORD: password
-      JWT_SECRET: ${JWT_SECRET:-d5R8C0pu0rJkqby030wx7pC2ayTrK8pSSdYOh0qqIAfRQeXEX0lLJwH10+omT1aDafAvAWewaVmef3ZwB9yQ4A==}
+      JWT_SECRET: ${JWT_SECRET}
       MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
     networks: [backend]
     healthcheck:
@@ -186,7 +186,7 @@ services:
     container_name: gateway-service
     depends_on: [user-service, inventory-service, order-service, zipkin]
     environment:
-      JWT_SECRET: ${JWT_SECRET:-d5R8C0pu0rJkqby030wx7pC2ayTrK8pSSdYOh0qqIAfRQeXEX0lLJwH10+omT1aDafAvAWewaVmef3ZwB9yQ4A==}
+      JWT_SECRET: ${JWT_SECRET}
       MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
     ports: ["8080:8080"]
     networks: [backend]

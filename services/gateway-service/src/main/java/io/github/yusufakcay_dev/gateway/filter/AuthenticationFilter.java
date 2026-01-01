@@ -57,6 +57,15 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
                         }
                     }
 
+                    // Enforce ADMIN role for ALL operations on inventories at gateway level
+                    if (exchange.getRequest().getURI().getPath().startsWith("/inventories")) {
+                        if (role == null || !role.equals("ADMIN")) {
+                            log.warn("Forbidden: Non-admin user {} attempted {} to inventories", username,
+                                    exchange.getRequest().getMethod());
+                            return onError(exchange, "Access Denied: Admin only", HttpStatus.FORBIDDEN);
+                        }
+                    }
+
                     // Pass user info to downstream services
                     exchange = exchange.mutate()
                             .request(r -> r.header("X-User-Name", username)

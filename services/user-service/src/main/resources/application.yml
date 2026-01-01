@@ -20,7 +20,7 @@ spring:
 application:
   security:
     jwt:
-      secret: ${JWT_SECRET:mysupersecretkeythatisatleast32characterslong1234567890}
+      secret: ${JWT_SECRET}
 
 management:
   endpoints:

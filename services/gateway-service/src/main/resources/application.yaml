@@ -37,6 +37,19 @@ spring:
                 - Path=/products/**
               filters:
                 - AuthenticationFilter
+            - id: inventory-service-docs
+              uri: http://inventory-service:8083
+              predicates:
+                - Path=/inventory-service/**
+              filters:
+                - RewritePath=/inventory-service/(?<segment>.*), /api/$\{segment}
+            - id: inventory-service
+              uri: http://inventory-service:8083
+              predicates:
+                - Path=/inventories/**
+              filters:
+                - RewritePath=/inventories/(?<segment>.*), /api/inventories/$\{segment}
+                - AuthenticationFilter
             - id: order-service-docs
               uri: http://order-service:8084
               predicates:
@@ -58,13 +71,15 @@ springdoc:
         url: /user-service/v3/api-docs
       - name: Product Service
         url: /product-service/v3/api-docs
+      - name: Inventory Service
+        url: /inventory-service/v3/api-docs
       - name: Order Service
         url: /order-service/v3/api-docs
 
 application:
   security:
     jwt:
-      secret: ${JWT_SECRET:mysupersecretkeythatisatleast32characterslong1234567890}
+      secret: ${JWT_SECRET}
 
 management:
   endpoints:

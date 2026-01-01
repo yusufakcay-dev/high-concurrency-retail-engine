@@ -140,6 +140,30 @@ public class InventoryService {
         return mapToResponse(updated);
     }
 
+    @Transactional
+    public InventoryResponse updateInventoryQuantity(String sku, Integer newQuantity) {
+        if (sku == null || sku.isBlank()) {
+            throw new IllegalArgumentException("SKU cannot be null or empty");
+        }
+
+        if (newQuantity == null || newQuantity < 0) {
+            throw new IllegalArgumentException("Quantity cannot be null or negative");
+        }
+
+        Inventory inventory = repository.findBySku(sku)
+                .orElseThrow(
+                        () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Inventory not found for SKU: " + sku));
+
+        int quantityDiff = newQuantity - inventory.getQuantity();
+        inventory.setQuantity(newQuantity);
+        inventory.setAvailableQuantity(inventory.getAvailableQuantity() + quantityDiff);
+
+        Inventory updated = repository.save(inventory);
+        log.info("Updated inventory for SKU: {} to quantity: {}", sku, newQuantity);
+
+        return mapToResponse(updated);
+    }
+
     private InventoryResponse mapToResponse(Inventory inventory) {
         return InventoryResponse.builder()
                 .id(inventory.getId())
