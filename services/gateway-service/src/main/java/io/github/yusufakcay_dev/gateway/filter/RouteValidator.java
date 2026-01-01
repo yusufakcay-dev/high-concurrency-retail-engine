@@ -18,7 +18,8 @@ public class RouteValidator {
                         "/v3/api-docs",
                         "/v3/api-docs/**",
                         "/user-service/v3/api-docs/**",
-                        "/product-service/v3/api-docs/**");
+                        "/product-service/v3/api-docs/**",
+                        "/order-service/v3/api-docs/**");
 
         private final AntPathMatcher matcher = new AntPathMatcher();
 

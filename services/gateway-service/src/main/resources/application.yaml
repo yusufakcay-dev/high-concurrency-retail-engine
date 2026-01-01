@@ -37,6 +37,18 @@ spring:
                 - Path=/products/**
               filters:
                 - AuthenticationFilter
+            - id: order-service-docs
+              uri: http://order-service:8084
+              predicates:
+                - Path=/order-service/**
+              filters:
+                - StripPrefix=1
+            - id: order-service
+              uri: http://order-service:8084
+              predicates:
+                - Path=/api/orders/**
+              filters:
+                - AuthenticationFilter
 
 springdoc:
   swagger-ui:
@@ -46,6 +58,8 @@ springdoc:
         url: /user-service/v3/api-docs
       - name: Product Service
         url: /product-service/v3/api-docs
+      - name: Order Service
+        url: /order-service/v3/api-docs
 
 application:
   security:
@@ -60,3 +74,9 @@ management:
   endpoint:
     health:
       show-details: always
+  tracing:
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: ${MANAGEMENT_ZIPKIN_TRACING_ENDPOINT:http://localhost:9411/api/v2/spans}
