@@ -13,4 +13,5 @@ public class ProductResponse {
     private String sku;
     private BigDecimal price;
     private Boolean active;
+    private Boolean inStock;
 }

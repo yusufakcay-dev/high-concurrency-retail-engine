@@ -1,11 +1,13 @@
 package io.github.yusufakcay_dev.inventory_service.service;
 
 import io.github.yusufakcay_dev.inventory_service.dto.InventoryResponse;
+import io.github.yusufakcay_dev.inventory_service.dto.ProductStockStatusEvent;
 import io.github.yusufakcay_dev.inventory_service.entity.Inventory;
 import io.github.yusufakcay_dev.inventory_service.repository.InventoryRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -16,6 +18,9 @@ import org.springframework.web.server.ResponseStatusException;
 public class InventoryService {
 
     private final InventoryRepository repository;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
+
+    private static final String PRODUCT_STOCK_STATUS_TOPIC = "product-stock-status-topic";
 
     @Transactional
     public InventoryResponse initializeInventory(String sku, Integer initialStock) {
@@ -77,11 +82,18 @@ public class InventoryService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Insufficient inventory for SKU: " + sku);
         }
 
+        boolean wasAvailable = inventory.getAvailableQuantity() > 0;
+
         inventory.setReservedQuantity(inventory.getReservedQuantity() + quantity);
         inventory.setAvailableQuantity(inventory.getAvailableQuantity() - quantity);
 
         Inventory updated = repository.save(inventory);
         log.info("Reserved {} units for SKU: {}", quantity, sku);
+
+        // If inventory hits 0, send out-of-stock event
+        if (wasAvailable && updated.getAvailableQuantity() == 0) {
+            publishStockStatusEvent(sku, false);
+        }
 
         return mapToResponse(updated);
     }
@@ -104,11 +116,18 @@ public class InventoryService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Cannot release more than reserved quantity");
         }
 
+        boolean wasOutOfStock = inventory.getAvailableQuantity() == 0;
+
         inventory.setReservedQuantity(inventory.getReservedQuantity() - quantity);
         inventory.setAvailableQuantity(inventory.getAvailableQuantity() + quantity);
 
         Inventory updated = repository.save(inventory);
         log.info("Released {} units for SKU: {}", quantity, sku);
+
+        // If inventory becomes available again (was 0), send back-in-stock event
+        if (wasOutOfStock && updated.getAvailableQuantity() > 0) {
+            publishStockStatusEvent(sku, true);
+        }
 
         return mapToResponse(updated);
     }
@@ -131,11 +150,18 @@ public class InventoryService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Cannot confirm more than reserved quantity");
         }
 
+        boolean wasInStock = inventory.getQuantity() > 0;
+
         inventory.setReservedQuantity(inventory.getReservedQuantity() - quantity);
         inventory.setQuantity(inventory.getQuantity() - quantity);
 
         Inventory updated = repository.save(inventory);
         log.info("Confirmed reservation of {} units for SKU: {}", quantity, sku);
+
+        // If total quantity hits 0, send out-of-stock event
+        if (wasInStock && updated.getQuantity() == 0) {
+            publishStockStatusEvent(sku, false);
+        }
 
         return mapToResponse(updated);
     }
@@ -154,12 +180,23 @@ public class InventoryService {
                 .orElseThrow(
                         () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Inventory not found for SKU: " + sku));
 
+        boolean wasAvailable = inventory.getAvailableQuantity() > 0;
+
         int quantityDiff = newQuantity - inventory.getQuantity();
         inventory.setQuantity(newQuantity);
         inventory.setAvailableQuantity(inventory.getAvailableQuantity() + quantityDiff);
 
         Inventory updated = repository.save(inventory);
         log.info("Updated inventory for SKU: {} to quantity: {}", sku, newQuantity);
+
+        // Send out-of-stock event if available quantity drops to 0
+        if (wasAvailable && updated.getAvailableQuantity() <= 0) {
+            publishStockStatusEvent(sku, false);
+        }
+        // Send back-in-stock event if available quantity goes above 0
+        else if (!wasAvailable && updated.getAvailableQuantity() > 0) {
+            publishStockStatusEvent(sku, true);
+        }
 
         return mapToResponse(updated);
     }
@@ -174,6 +211,26 @@ public class InventoryService {
                 .createdAt(inventory.getCreatedAt())
                 .updatedAt(inventory.getUpdatedAt())
                 .build();
+    }
+
+    /**
+     * Publishes stock status event to Kafka for product-service to consume
+     * 
+     * @param sku     Product SKU
+     * @param inStock true if product is back in stock, false if out of stock
+     */
+    private void publishStockStatusEvent(String sku, boolean inStock) {
+        try {
+            ProductStockStatusEvent event = ProductStockStatusEvent.builder()
+                    .sku(sku)
+                    .inStock(inStock)
+                    .build();
+
+            kafkaTemplate.send(PRODUCT_STOCK_STATUS_TOPIC, sku, event);
+            log.info("Published stock status event for SKU: {} - inStock: {}", sku, inStock);
+        } catch (Exception e) {
+            log.error("Failed to publish stock status event for SKU: {}", sku, e);
+        }
     }
 
 }

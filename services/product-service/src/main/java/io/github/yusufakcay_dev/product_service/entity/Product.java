@@ -38,6 +38,10 @@ public class Product {
     @Column(nullable = false)
     private Boolean active;
 
+    @Column(nullable = false)
+    @Builder.Default
+    private Boolean inStock = true;
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 

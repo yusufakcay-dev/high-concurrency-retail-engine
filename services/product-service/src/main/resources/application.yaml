@@ -31,6 +31,14 @@ spring:
       delivery.timeout.ms: 60000
       linger.ms: 10
       batch.size: 32768
+    consumer:
+      group-id: product-service-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+        "[spring.json.type.mapping]": "io.github.yusufakcay_dev.inventory_service.dto.ProductStockStatusEvent:io.github.yusufakcay_dev.product_service.dto.ProductStockStatusEvent"
 
 app:
   topics:

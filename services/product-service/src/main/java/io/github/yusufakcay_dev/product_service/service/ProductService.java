@@ -89,6 +89,7 @@ public class ProductService {
                 .sku(product.getSku())
                 .price(product.getPrice())
                 .active(product.getActive())
+                .inStock(product.getInStock())
                 .build();
     }
 }
