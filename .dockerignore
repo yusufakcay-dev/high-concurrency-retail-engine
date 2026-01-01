@@ -4,3 +4,4 @@ target
 .mvn
 .idea
 *.iml
+.env
