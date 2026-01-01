@@ -24,14 +24,13 @@ services:
       context: ./services/user-service
       dockerfile: Dockerfile
     container_name: user-service
-    depends_on: [postgres, zipkin]
+    depends_on: [postgres]
     environment:
       SERVER_PORT: 8082
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/user_db
       SPRING_DATASOURCE_USERNAME: admin
       SPRING_DATASOURCE_PASSWORD: password
       JWT_SECRET: ${JWT_SECRET}
-      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
     networks: [backend]
     healthcheck:
       test:
@@ -49,14 +48,13 @@ services:
       context: ./services/product-service
       dockerfile: Dockerfile
     container_name: product-service
-    depends_on: [postgres, kafka, zipkin]
+    depends_on: [postgres, kafka]
     environment:
       SERVER_PORT: 8081
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/product_db
       SPRING_DATASOURCE_USERNAME: admin
       SPRING_DATASOURCE_PASSWORD: password
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
     networks: [backend]
     healthcheck:
       test:
@@ -75,14 +73,13 @@ services:
       context: ./services/inventory-service
       dockerfile: Dockerfile
     container_name: inventory-service
-    depends_on: [postgres, kafka, zipkin]
+    depends_on: [postgres, kafka]
     environment:
       SERVER_PORT: 8083
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/inventory_db
       SPRING_DATASOURCE_USERNAME: admin
       SPRING_DATASOURCE_PASSWORD: password
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
     networks: [backend]
     #ports: ["8083:8083"]
     healthcheck:
@@ -102,7 +99,7 @@ services:
       context: ./services/order-service
       dockerfile: Dockerfile
     container_name: order-service
-    depends_on: [postgres, kafka, payment-service, inventory-service, zipkin]
+    depends_on: [postgres, kafka, payment-service, inventory-service]
     environment:
       SERVER_PORT: 8084
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/order_db
@@ -111,7 +108,6 @@ services:
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       PAYMENT_SERVICE_URL: http://payment-service:8085
       INVENTORY_SERVICE_URL: http://inventory-service:8083
-      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
     networks: [backend]
     healthcheck:
       test:
@@ -130,7 +126,7 @@ services:
       context: ./services/payment-service
       dockerfile: Dockerfile
     container_name: payment-service
-    depends_on: [postgres, kafka, zipkin]
+    depends_on: [postgres, kafka]
     ports: ["8085:8085"] # Exposed for Stripe webhooks
     environment:
       SERVER_PORT: 8085
@@ -138,7 +134,6 @@ services:
       SPRING_DATASOURCE_USERNAME: admin
       SPRING_DATASOURCE_PASSWORD: password
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
       STRIPE_API_KEY: ${STRIPE_API_KEY}
       STRIPE_SUCCESS_URL: ${STRIPE_SUCCESS_URL:-http://localhost:8080/payment/success}
       STRIPE_CANCEL_URL: ${STRIPE_CANCEL_URL:-http://localhost:8080/payment/cancel}
@@ -161,11 +156,10 @@ services:
       context: ./services/notification-service
       dockerfile: Dockerfile
     container_name: notification-service
-    depends_on: [kafka, zipkin]
+    depends_on: [kafka]
     environment:
       SERVER_PORT: 8086
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
     networks: [backend]
     healthcheck:
       test:
@@ -184,10 +178,9 @@ services:
       context: ./services/gateway-service
       dockerfile: Dockerfile
     container_name: gateway-service
-    depends_on: [user-service, inventory-service, order-service, zipkin]
+    depends_on: [user-service, inventory-service, order-service]
     environment:
       JWT_SECRET: ${JWT_SECRET}
-      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
     ports: ["8080:8080"]
     networks: [backend]
     healthcheck:
@@ -235,26 +228,6 @@ services:
       timeout: 10s
       retries: 5
       start_period: 40s
-
-  kafka-ui:
-    image: provectuslabs/kafka-ui:latest
-    container_name: kafka-ui
-    ports:
-      - "8090:8080" # Access at http://localhost:8090
-    environment:
-      KAFKA_CLUSTERS_0_NAME: local
-      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
-    networks:
-      - backend
-
-  # Distributed Tracing with Zipkin
-  zipkin:
-    image: openzipkin/zipkin
-    container_name: zipkin
-    ports:
-      - "9411:9411"
-    networks:
-      - backend
 
 networks:
   backend:
