@@ -65,6 +65,7 @@ spring:
 
 springdoc:
   swagger-ui:
+    persist-authorization: true
     path: /swagger-ui.html
     urls:
       - name: User Service
