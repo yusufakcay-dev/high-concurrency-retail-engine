@@ -4,6 +4,10 @@ server:
 spring:
   application:
     name: gateway-service
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
   cloud:
     gateway:
       server:
@@ -19,12 +23,23 @@ spring:
               uri: http://user-service:8082
               predicates:
                 - Path=/auth/**
+              filters:
+                - name: RequestRateLimiter
+                  args:
+                    redis-rate-limiter.replenishRate: 10
+                    redis-rate-limiter.burstCapacity: 20
+                    key-resolver: "#{@userKeyResolver}"
             - id: user-service-me
               uri: http://user-service:8082
               predicates:
                 - Path=/user/**
               filters:
                 - AuthenticationFilter
+                - name: RequestRateLimiter
+                  args:
+                    redis-rate-limiter.replenishRate: 20
+                    redis-rate-limiter.burstCapacity: 40
+                    key-resolver: "#{@userKeyResolver}"
             - id: product-service-docs
               uri: http://product-service:8081
               predicates:
@@ -37,6 +52,11 @@ spring:
                 - Path=/products/**
               filters:
                 - AuthenticationFilter
+                - name: RequestRateLimiter
+                  args:
+                    redis-rate-limiter.replenishRate: 50
+                    redis-rate-limiter.burstCapacity: 100
+                    key-resolver: "#{@userKeyResolver}"
             - id: inventory-service-docs
               uri: http://inventory-service:8083
               predicates:
@@ -50,6 +70,11 @@ spring:
               filters:
                 - RewritePath=/inventories/(?<segment>.*), /api/inventories/$\{segment}
                 - AuthenticationFilter
+                - name: RequestRateLimiter
+                  args:
+                    redis-rate-limiter.replenishRate: 20
+                    redis-rate-limiter.burstCapacity: 40
+                    key-resolver: "#{@userKeyResolver}"
             - id: order-service-docs
               uri: http://order-service:8084
               predicates:
@@ -62,6 +87,11 @@ spring:
                 - Path=/api/orders/**
               filters:
                 - AuthenticationFilter
+                - name: RequestRateLimiter
+                  args:
+                    redis-rate-limiter.replenishRate: 10
+                    redis-rate-limiter.burstCapacity: 20
+                    key-resolver: "#{@userKeyResolver}"
 
 springdoc:
   swagger-ui:

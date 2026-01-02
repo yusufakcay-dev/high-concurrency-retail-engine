@@ -184,9 +184,11 @@ services:
       context: ./services/gateway-service
       dockerfile: Dockerfile
     container_name: gateway-service
-    depends_on: [user-service, inventory-service, order-service]
+    depends_on: [user-service, inventory-service, order-service, redis]
     environment:
       JWT_SECRET: ${JWT_SECRET}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
     ports: ["8080:8080"]
     networks: [backend]
     healthcheck:

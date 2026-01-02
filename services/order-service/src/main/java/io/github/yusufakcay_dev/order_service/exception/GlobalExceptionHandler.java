@@ -1,5 +1,7 @@
 package io.github.yusufakcay_dev.order_service.exception;
 
+import io.github.yusufakcay_dev.order_service.client.InventoryServiceFallback.InventoryServiceUnavailableException;
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -21,6 +23,51 @@ import java.util.Map;
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    /**
+     * Handle Circuit Breaker Open (503 Service Unavailable)
+     */
+    @ExceptionHandler(CallNotPermittedException.class)
+    public ResponseEntity<ProblemDetail> handleCircuitBreakerOpen(
+            CallNotPermittedException ex, WebRequest request) {
+
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+                HttpStatus.SERVICE_UNAVAILABLE,
+                "Service is temporarily unavailable due to high failure rate. Please try again later.");
+
+        problemDetail.setTitle("Service Unavailable - Circuit Breaker Open");
+        problemDetail.setType(URI.create("https://api.retail-engine.com/errors/circuit-breaker-open"));
+        problemDetail.setProperty("timestamp", Instant.now());
+        problemDetail.setProperty("circuitBreaker", ex.getCausingCircuitBreakerName());
+        problemDetail.setProperty("retryAfterSeconds", 30);
+
+        log.error("Circuit breaker OPEN for: {}", ex.getCausingCircuitBreakerName());
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .header("Retry-After", "30")
+                .body(problemDetail);
+    }
+
+    /**
+     * Handle Inventory Service Unavailable (503 Service Unavailable)
+     */
+    @ExceptionHandler(InventoryServiceUnavailableException.class)
+    public ResponseEntity<ProblemDetail> handleInventoryServiceUnavailable(
+            InventoryServiceUnavailableException ex, WebRequest request) {
+
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+                HttpStatus.SERVICE_UNAVAILABLE,
+                ex.getMessage());
+
+        problemDetail.setTitle("Inventory Service Unavailable");
+        problemDetail.setType(URI.create("https://api.retail-engine.com/errors/inventory-service-unavailable"));
+        problemDetail.setProperty("timestamp", Instant.now());
+        problemDetail.setProperty("retryAfterSeconds", 30);
+
+        log.error("Inventory service unavailable: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .header("Retry-After", "30")
+                .body(problemDetail);
+    }
 
     /**
      * Handle validation errors (400 Bad Request)

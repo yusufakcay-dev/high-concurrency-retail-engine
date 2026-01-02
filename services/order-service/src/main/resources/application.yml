@@ -32,6 +32,12 @@ spring:
     redis:
       host: ${SPRING_REDIS_HOST:localhost}
       port: ${SPRING_REDIS_PORT:6379}
+  cloud:
+    openfeign:
+      circuitbreaker:
+        enabled: true
+        alphanumeric-ids:
+          enabled: true
 
 server:
   port: ${SERVER_PORT:8084}
@@ -40,10 +46,13 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,circuitbreakers,circuitbreakerevents
   endpoint:
     health:
       show-details: always
+  health:
+    circuitbreakers:
+      enabled: true
   tracing:
     sampling:
       probability: 1.0
@@ -54,6 +63,36 @@ payment-service:
 
 inventory-service:
   url: ${INVENTORY_SERVICE_URL:http://localhost:8083}
+
+# Resilience4j Circuit Breaker Configuration
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        waitDurationInOpenState: 30s
+        failureRateThreshold: 50
+        eventConsumerBufferSize: 10
+        recordExceptions:
+          - java.lang.Exception
+          - feign.FeignException
+    instances:
+      inventory-service:
+        baseConfig: default
+        waitDurationInOpenState: 20s
+        slidingWindowSize: 5
+        minimumNumberOfCalls: 3
+  timelimiter:
+    configs:
+      default:
+        timeoutDuration: 5s
+    instances:
+      inventory-service:
+        timeoutDuration: 3s
 
 springdoc:
   api-docs:
