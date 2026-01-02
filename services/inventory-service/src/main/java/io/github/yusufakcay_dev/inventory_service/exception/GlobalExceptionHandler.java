@@ -1,4 +1,4 @@
-package io.github.yusufakcay_dev.order_service.exception;
+package io.github.yusufakcay_dev.inventory_service.exception;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -9,6 +9,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.net.URI;
 import java.time.Instant;
@@ -18,8 +19,8 @@ import java.util.Map;
 /**
  * Global Exception Handler following RFC 7807 Problem Details for HTTP APIs
  */
-@Slf4j
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
 
     /**
@@ -69,22 +70,23 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Handle RuntimeException (500 Internal Server Error)
+     * Handle ResponseStatusException (4xx/5xx)
      */
-    @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<ProblemDetail> handleRuntimeException(
-            RuntimeException ex, WebRequest request) {
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<ProblemDetail> handleResponseStatusException(
+            ResponseStatusException ex, WebRequest request) {
 
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
-                HttpStatus.INTERNAL_SERVER_ERROR,
-                ex.getMessage());
+                ex.getStatusCode(),
+                ex.getReason() != null ? ex.getReason() : "An error occurred");
 
-        problemDetail.setTitle("Runtime Error");
-        problemDetail.setType(URI.create("https://api.retail-engine.com/errors/runtime-error"));
+        problemDetail.setTitle(ex.getStatusCode().toString());
+        problemDetail.setType(URI.create("https://api.retail-engine.com/errors/" +
+                ex.getStatusCode().value()));
         problemDetail.setProperty("timestamp", Instant.now());
 
-        log.error("Runtime exception occurred: {}", ex.getMessage(), ex);
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(problemDetail);
+        log.error("Response status exception: {} - {}", ex.getStatusCode(), ex.getReason());
+        return ResponseEntity.status(ex.getStatusCode()).body(problemDetail);
     }
 
     /**
@@ -103,6 +105,25 @@ public class GlobalExceptionHandler {
         problemDetail.setProperty("timestamp", Instant.now());
 
         log.error("Unexpected error occurred", ex);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(problemDetail);
+    }
+
+    /**
+     * Handle RuntimeException (500 Internal Server Error)
+     */
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<ProblemDetail> handleRuntimeException(
+            RuntimeException ex, WebRequest request) {
+
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                ex.getMessage());
+
+        problemDetail.setTitle("Runtime Error");
+        problemDetail.setType(URI.create("https://api.retail-engine.com/errors/runtime-error"));
+        problemDetail.setProperty("timestamp", Instant.now());
+
+        log.error("Runtime exception occurred: {}", ex.getMessage(), ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(problemDetail);
     }
 }

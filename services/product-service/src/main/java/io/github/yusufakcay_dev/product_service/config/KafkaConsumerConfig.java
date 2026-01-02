@@ -1,6 +1,6 @@
-package io.github.yusufakcay_dev.inventory_service.config;
+package io.github.yusufakcay_dev.product_service.config;
 
-import io.github.yusufakcay_dev.inventory_service.dto.ProductCreatedEvent;
+import io.github.yusufakcay_dev.product_service.dto.ProductStockStatusEvent;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,11 +32,11 @@ public class KafkaConsumerConfig {
     @Value("${spring.kafka.bootstrap-servers}")
     private String bootstrapServers;
 
-    @Value("${spring.kafka.consumer.group-id}")
+    @Value("${spring.kafka.consumer.group-id:product-service-group}")
     private String groupId;
 
     @Bean
-    public ConsumerFactory<String, ProductCreatedEvent> consumerFactory() {
+    public ConsumerFactory<String, ProductStockStatusEvent> consumerFactory() {
         Map<String, Object> props = new HashMap<>();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         props.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
@@ -53,7 +53,7 @@ public class KafkaConsumerConfig {
         props.put(ErrorHandlingDeserializer.VALUE_DESERIALIZER_CLASS, JsonDeserializer.class);
 
         // JsonDeserializer configuration
-        props.put(JsonDeserializer.VALUE_DEFAULT_TYPE, ProductCreatedEvent.class.getName());
+        props.put(JsonDeserializer.VALUE_DEFAULT_TYPE, ProductStockStatusEvent.class.getName());
         props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
         props.put(JsonDeserializer.USE_TYPE_INFO_HEADERS, false);
 
@@ -61,12 +61,10 @@ public class KafkaConsumerConfig {
     }
 
     @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, ProductCreatedEvent> kafkaListenerContainerFactory() {
-        ConcurrentKafkaListenerContainerFactory<String, ProductCreatedEvent> factory = new ConcurrentKafkaListenerContainerFactory<>();
+    public ConcurrentKafkaListenerContainerFactory<String, ProductStockStatusEvent> kafkaListenerContainerFactory() {
+        ConcurrentKafkaListenerContainerFactory<String, ProductStockStatusEvent> factory = new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory());
         factory.setConcurrency(1);
-        // Enable batch error handling for DLT
-        factory.getContainerProperties().setObservationEnabled(true);
         return factory;
     }
 }
