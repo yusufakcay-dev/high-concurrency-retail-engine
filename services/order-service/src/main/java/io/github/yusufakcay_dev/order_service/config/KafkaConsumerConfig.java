@@ -1,6 +1,6 @@
 package io.github.yusufakcay_dev.order_service.config;
 
-import io.github.yusufakcay_dev.order_service.dto.PaymentResponse;
+import io.github.yusufakcay_dev.order_service.event.PaymentResultEvent;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,6 +24,10 @@ import java.util.Map;
  * Without it, SerializationException is thrown before reaching the consumer
  * method,
  * preventing retry and DLQ mechanisms from working properly.
+ * 
+ * BUG FIX: Changed default type from PaymentResponse to PaymentResultEvent
+ * to match the @KafkaListener expecting PaymentResultEvent in
+ * PaymentResultConsumer
  */
 @Configuration
 @EnableKafka
@@ -36,7 +40,7 @@ public class KafkaConsumerConfig {
     private String groupId;
 
     @Bean
-    public ConsumerFactory<String, PaymentResponse> consumerFactory() {
+    public ConsumerFactory<String, PaymentResultEvent> consumerFactory() {
         Map<String, Object> props = new HashMap<>();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         props.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
@@ -52,8 +56,8 @@ public class KafkaConsumerConfig {
         props.put(ErrorHandlingDeserializer.KEY_DESERIALIZER_CLASS, StringDeserializer.class);
         props.put(ErrorHandlingDeserializer.VALUE_DESERIALIZER_CLASS, JsonDeserializer.class);
 
-        // JsonDeserializer configuration
-        props.put(JsonDeserializer.VALUE_DEFAULT_TYPE, PaymentResponse.class.getName());
+        // JsonDeserializer configuration - FIXED: Changed to PaymentResultEvent
+        props.put(JsonDeserializer.VALUE_DEFAULT_TYPE, PaymentResultEvent.class.getName());
         props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
         props.put(JsonDeserializer.USE_TYPE_INFO_HEADERS, false);
 
@@ -61,8 +65,8 @@ public class KafkaConsumerConfig {
     }
 
     @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, PaymentResponse> kafkaListenerContainerFactory() {
-        ConcurrentKafkaListenerContainerFactory<String, PaymentResponse> factory = new ConcurrentKafkaListenerContainerFactory<>();
+    public ConcurrentKafkaListenerContainerFactory<String, PaymentResultEvent> kafkaListenerContainerFactory() {
+        ConcurrentKafkaListenerContainerFactory<String, PaymentResultEvent> factory = new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory());
         factory.setConcurrency(1);
         return factory;
