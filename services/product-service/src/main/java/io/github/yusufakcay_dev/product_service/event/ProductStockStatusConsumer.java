@@ -5,6 +5,7 @@ import io.github.yusufakcay_dev.product_service.entity.Product;
 import io.github.yusufakcay_dev.product_service.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.kafka.annotation.DltHandler;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.annotation.RetryableTopic;
@@ -26,7 +27,8 @@ public class ProductStockStatusConsumer {
             Exception.class }, topicSuffixingStrategy = TopicSuffixingStrategy.SUFFIX_WITH_INDEX_VALUE)
     @KafkaListener(topics = "product-stock-status-topic", groupId = "product-service-group")
     @Transactional
-    public void handleStockStatusEvent(ProductStockStatusEvent event) {
+    @CacheEvict(value = "products", key = "#result.id", condition = "#result != null")
+    public Product handleStockStatusEvent(ProductStockStatusEvent event) {
         log.info("Received stock status event for SKU: {} - inStock: {}", event.getSku(), event.getInStock());
 
         try {
@@ -37,7 +39,10 @@ public class ProductStockStatusConsumer {
             product.setInStock(event.getInStock());
             productRepository.save(product);
 
-            log.info("Updated product {} inStock status to: {}", event.getSku(), event.getInStock());
+            log.info("Updated product {} (ID: {}) inStock status to: {} - Cache evicted",
+                    event.getSku(), product.getId(), event.getInStock());
+
+            return product;
 
         } catch (Exception e) {
             log.error("Error processing stock status event for SKU: {}", event.getSku(), e);

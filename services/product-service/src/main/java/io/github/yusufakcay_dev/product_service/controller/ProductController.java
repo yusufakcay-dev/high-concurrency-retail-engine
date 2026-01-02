@@ -73,6 +73,9 @@ public class ProductController {
     @ResponseStatus(HttpStatus.OK)
     @Operation(summary = "Get product by ID")
     public ProductResponse getProduct(@PathVariable Long id) {
-        return service.getProductById(id);
+        log.info("===== GET /products/{} called =====", id);
+        ProductResponse response = service.getProductById(id);
+        log.info("===== Product response retrieved: {} =====", response.getId());
+        return response;
     }
 }

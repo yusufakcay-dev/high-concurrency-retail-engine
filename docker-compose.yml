@@ -48,13 +48,15 @@ services:
       context: ./services/product-service
       dockerfile: Dockerfile
     container_name: product-service
-    depends_on: [postgres, kafka]
+    depends_on: [postgres, kafka, redis]
     environment:
       SERVER_PORT: 8081
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/product_db
       SPRING_DATASOURCE_USERNAME: admin
       SPRING_DATASOURCE_PASSWORD: password
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
     networks: [backend]
     healthcheck:
       test:

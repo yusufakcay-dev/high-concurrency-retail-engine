@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -71,14 +72,17 @@ public class ProductService {
         return mapToResponse(product);
     }
 
-    public Page<ProductResponse> getAllProducts(Pageable pageable) {
-        return repository.findAll(pageable).map(this::mapToResponse);
-    }
-
+    @Cacheable(value = "products", key = "#id", unless = "#result == null")
     public ProductResponse getProductById(Long id) {
+        log.info("===== CACHE MISS - Fetching product from database - ID: {} =====", id);
         Product product = repository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found"));
+        log.info("===== Product fetched from DB: {} =====", product.getId());
         return mapToResponse(product);
+    }
+
+    public Page<ProductResponse> getAllProducts(Pageable pageable) {
+        return repository.findAll(pageable).map(this::mapToResponse);
     }
 
     private ProductResponse mapToResponse(Product product) {
