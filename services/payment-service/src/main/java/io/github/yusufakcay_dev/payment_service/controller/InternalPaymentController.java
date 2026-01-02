@@ -47,33 +47,45 @@ public class InternalPaymentController {
     }
 
     /**
-     * Webhook endpoint for receiving Stripe events
-     * Use Stripe CLI for local testing: stripe listen --forward-to
-     * localhost:8085/webhooks/stripe
+     * Webhook endpoint for receiving Stripe events via Gateway
+     * Gateway forwards from /payments/webhook to this endpoint
+     * 
+     * SECURITY: This endpoint REQUIRES valid Stripe signature verification.
+     * Requests without valid signatures will be rejected with 400 Bad Request.
      */
-    @PostMapping("/webhooks/stripe")
+    @PostMapping({ "/webhooks/stripe", "/payments/webhook" })
     public ResponseEntity<String> handleStripeWebhook(
             @RequestBody String payload,
             @RequestHeader(value = "Stripe-Signature", required = false) String sigHeader) {
 
-        log.info("Received Stripe webhook");
+        log.info("Received Stripe webhook request");
+
+        // SECURITY: Reject requests without Stripe-Signature header
+        if (sigHeader == null || sigHeader.isEmpty()) {
+            log.warn("Webhook request rejected: Missing Stripe-Signature header - possible malicious request");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Missing Stripe-Signature header");
+        }
+
+        // SECURITY: Reject if webhook secret is not configured
+        if (webhookSecret == null || webhookSecret.isEmpty()) {
+            log.error("Webhook secret not configured - cannot verify signature");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Webhook configuration error");
+        }
 
         Event event;
 
         try {
-            // Always verify signature if secret is configured
-            if (webhookSecret != null && !webhookSecret.isEmpty() && sigHeader != null) {
-                // Verify signature and parse event
-                event = Webhook.constructEvent(payload, sigHeader, webhookSecret);
-                log.info("Webhook signature verified successfully");
-            } else {
-                // For development/testing without signature
-                log.warn("Processing webhook without signature verification");
-                event = Webhook.constructEvent(payload, sigHeader, webhookSecret);
-            }
+            // Verify signature using Stripe SDK - this validates:
+            // 1. The signature matches the payload using HMAC-SHA256
+            // 2. The timestamp is within tolerance (prevents replay attacks)
+            event = Webhook.constructEvent(payload, sigHeader, webhookSecret);
+            log.info("Webhook signature verified successfully for event: {}", event.getId());
         } catch (SignatureVerificationException e) {
-            log.error("Invalid webhook signature", e);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid signature");
+            log.error("Invalid webhook signature - possible malicious request. Error: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Invalid signature - request rejected");
         } catch (Exception e) {
             log.error("Failed to parse webhook event", e);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid event");

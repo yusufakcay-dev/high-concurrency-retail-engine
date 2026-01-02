@@ -26,7 +26,8 @@ public class SecurityConfig {
                                                                 "/api/orders", "/api/orders/**",
                                                                 "/actuator/health", "/actuator/health/**",
                                                                 "/actuator/info", "/api/inventories/**",
-                                                                "/inventories/**", "/api/inventory/")
+                                                                "/inventories/**", "/api/inventory/",
+                                                                "/payments/webhook")
                                                 .permitAll()
                                                 .anyExchange().authenticated())
                                 .httpBasic(ServerHttpSecurity.HttpBasicSpec::disable);

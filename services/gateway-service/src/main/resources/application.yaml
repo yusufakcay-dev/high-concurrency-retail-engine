@@ -13,6 +13,14 @@ spring:
       server:
         webflux:
           routes:
+            - id: stripe-webhook
+              uri: http://payment-service:8085
+              predicates:
+                - Path=/payments/webhook
+              filters:
+                - RewritePath=/payments/webhook, /webhooks/stripe
+                # No authentication needed for Stripe webhooks
+                # Stripe validates using signature verification in the payment service
             - id: user-service-docs
               uri: http://user-service:8082
               predicates:

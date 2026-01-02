@@ -12,6 +12,7 @@ public class RouteValidator {
 
         private static final List<String> openApiEndpoints = List.of(
                         "/auth/**",
+                        "/payments/webhook",
                         "/swagger-ui.html",
                         "/swagger-ui/**",
                         "/webjars/**",
