@@ -71,6 +71,17 @@
             <version>2.8.0</version>
         </dependency>
 
+        <!-- Redis for idempotency -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>io.lettuce</groupId>
+            <artifactId>lettuce-core</artifactId>
+        </dependency>
+
         <!-- Distributed Tracing -->
         <dependency>
             <groupId>io.micrometer</groupId>

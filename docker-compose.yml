@@ -101,7 +101,7 @@ services:
       context: ./services/order-service
       dockerfile: Dockerfile
     container_name: order-service
-    depends_on: [postgres, kafka, payment-service, inventory-service]
+    depends_on: [postgres, kafka, payment-service, inventory-service, redis]
     environment:
       SERVER_PORT: 8084
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/order_db
@@ -110,6 +110,8 @@ services:
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       PAYMENT_SERVICE_URL: http://payment-service:8085
       INVENTORY_SERVICE_URL: http://inventory-service:8083
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
     networks: [backend]
     healthcheck:
       test:

@@ -13,7 +13,10 @@ import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name = "orders")
+@Table(name = "orders", indexes = {
+        @Index(name = "idx_orders_user_id", columnList = "userId"),
+        @Index(name = "idx_orders_status", columnList = "status")
+})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -45,6 +48,10 @@ public class Order {
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<OrderItem> items = new ArrayList<>();
+
+    @Version
+    @Builder.Default
+    private Long version = 0L;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;

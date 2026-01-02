@@ -28,6 +28,10 @@ spring:
         spring.json.trusted.packages: "*"
         spring.json.use.type.headers: false
         spring.json.value.default.type: io.github.yusufakcay_dev.order_service.event.PaymentResultEvent
+  data:
+    redis:
+      host: ${SPRING_REDIS_HOST:localhost}
+      port: ${SPRING_REDIS_PORT:6379}
 
 server:
   port: ${SERVER_PORT:8084}
