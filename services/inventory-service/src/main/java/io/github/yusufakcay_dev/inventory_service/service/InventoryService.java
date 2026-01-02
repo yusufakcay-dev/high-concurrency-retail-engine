@@ -6,11 +6,15 @@ import io.github.yusufakcay_dev.inventory_service.entity.Inventory;
 import io.github.yusufakcay_dev.inventory_service.repository.InventoryRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.http.HttpStatus;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
@@ -19,8 +23,12 @@ public class InventoryService {
 
     private final InventoryRepository repository;
     private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final RedissonClient redissonClient;
 
     private static final String PRODUCT_STOCK_STATUS_TOPIC = "product-stock-status-topic";
+    private static final String LOCK_PREFIX = "lock:inventory:";
+    private static final long LOCK_WAIT_TIME = 3; // seconds
+    private static final long LOCK_LEASE_TIME = 10; // seconds
 
     @Transactional
     public InventoryResponse initializeInventory(String sku, Integer initialStock) {
@@ -74,28 +82,55 @@ public class InventoryService {
             throw new IllegalArgumentException("Quantity must be greater than 0");
         }
 
-        Inventory inventory = repository.findBySku(sku)
-                .orElseThrow(
-                        () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Inventory not found for SKU: " + sku));
+        RLock lock = redissonClient.getLock(LOCK_PREFIX + sku);
 
-        if (inventory.getAvailableQuantity() < quantity) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Insufficient inventory for SKU: " + sku);
+        try {
+            // Try to acquire lock with timeout (fail fast)
+            boolean isLocked = lock.tryLock(LOCK_WAIT_TIME, LOCK_LEASE_TIME, TimeUnit.SECONDS);
+
+            if (!isLocked) {
+                log.warn("Failed to acquire lock for SKU: {} - concurrent operation in progress", sku);
+                throw new ResponseStatusException(HttpStatus.CONFLICT,
+                        "Another operation is in progress for this product. Please try again.");
+            }
+
+            log.debug("Acquired distributed lock for SKU: {}", sku);
+
+            Inventory inventory = repository.findBySku(sku)
+                    .orElseThrow(
+                            () -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                                    "Inventory not found for SKU: " + sku));
+
+            if (inventory.getAvailableQuantity() < quantity) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Insufficient inventory for SKU: " + sku);
+            }
+
+            boolean wasAvailable = inventory.getAvailableQuantity() > 0;
+
+            inventory.setReservedQuantity(inventory.getReservedQuantity() + quantity);
+            inventory.setAvailableQuantity(inventory.getAvailableQuantity() - quantity);
+
+            Inventory updated = repository.save(inventory);
+            log.info("Reserved {} units for SKU: {}", quantity, sku);
+
+            // If inventory hits 0, send out-of-stock event
+            if (wasAvailable && updated.getAvailableQuantity() == 0) {
+                publishStockStatusEvent(sku, false);
+            }
+
+            return mapToResponse(updated);
+
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.error("Lock acquisition interrupted for SKU: {}", sku, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Failed to process reservation due to interruption");
+        } finally {
+            if (lock.isHeldByCurrentThread()) {
+                lock.unlock();
+                log.debug("Released distributed lock for SKU: {}", sku);
+            }
         }
-
-        boolean wasAvailable = inventory.getAvailableQuantity() > 0;
-
-        inventory.setReservedQuantity(inventory.getReservedQuantity() + quantity);
-        inventory.setAvailableQuantity(inventory.getAvailableQuantity() - quantity);
-
-        Inventory updated = repository.save(inventory);
-        log.info("Reserved {} units for SKU: {}", quantity, sku);
-
-        // If inventory hits 0, send out-of-stock event
-        if (wasAvailable && updated.getAvailableQuantity() == 0) {
-            publishStockStatusEvent(sku, false);
-        }
-
-        return mapToResponse(updated);
     }
 
     @Transactional
@@ -108,28 +143,54 @@ public class InventoryService {
             throw new IllegalArgumentException("Quantity must be greater than 0");
         }
 
-        Inventory inventory = repository.findBySku(sku)
-                .orElseThrow(
-                        () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Inventory not found for SKU: " + sku));
+        RLock lock = redissonClient.getLock(LOCK_PREFIX + sku);
 
-        if (inventory.getReservedQuantity() < quantity) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Cannot release more than reserved quantity");
+        try {
+            boolean isLocked = lock.tryLock(LOCK_WAIT_TIME, LOCK_LEASE_TIME, TimeUnit.SECONDS);
+
+            if (!isLocked) {
+                log.warn("Failed to acquire lock for SKU: {} - concurrent operation in progress", sku);
+                throw new ResponseStatusException(HttpStatus.CONFLICT,
+                        "Another operation is in progress for this product. Please try again.");
+            }
+
+            log.debug("Acquired distributed lock for SKU: {}", sku);
+
+            Inventory inventory = repository.findBySku(sku)
+                    .orElseThrow(
+                            () -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                                    "Inventory not found for SKU: " + sku));
+
+            if (inventory.getReservedQuantity() < quantity) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Cannot release more than reserved quantity");
+            }
+
+            boolean wasOutOfStock = inventory.getAvailableQuantity() == 0;
+
+            inventory.setReservedQuantity(inventory.getReservedQuantity() - quantity);
+            inventory.setAvailableQuantity(inventory.getAvailableQuantity() + quantity);
+
+            Inventory updated = repository.save(inventory);
+            log.info("Released {} units for SKU: {}", quantity, sku);
+
+            // If inventory becomes available again (was 0), send back-in-stock event
+            if (wasOutOfStock && updated.getAvailableQuantity() > 0) {
+                publishStockStatusEvent(sku, true);
+            }
+
+            return mapToResponse(updated);
+
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.error("Lock acquisition interrupted for SKU: {}", sku, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Failed to process release due to interruption");
+        } finally {
+            if (lock.isHeldByCurrentThread()) {
+                lock.unlock();
+                log.debug("Released distributed lock for SKU: {}", sku);
+            }
         }
-
-        boolean wasOutOfStock = inventory.getAvailableQuantity() == 0;
-
-        inventory.setReservedQuantity(inventory.getReservedQuantity() - quantity);
-        inventory.setAvailableQuantity(inventory.getAvailableQuantity() + quantity);
-
-        Inventory updated = repository.save(inventory);
-        log.info("Released {} units for SKU: {}", quantity, sku);
-
-        // If inventory becomes available again (was 0), send back-in-stock event
-        if (wasOutOfStock && updated.getAvailableQuantity() > 0) {
-            publishStockStatusEvent(sku, true);
-        }
-
-        return mapToResponse(updated);
     }
 
     @Transactional
@@ -142,28 +203,54 @@ public class InventoryService {
             throw new IllegalArgumentException("Quantity must be greater than 0");
         }
 
-        Inventory inventory = repository.findBySku(sku)
-                .orElseThrow(
-                        () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Inventory not found for SKU: " + sku));
+        RLock lock = redissonClient.getLock(LOCK_PREFIX + sku);
 
-        if (inventory.getReservedQuantity() < quantity) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Cannot confirm more than reserved quantity");
+        try {
+            boolean isLocked = lock.tryLock(LOCK_WAIT_TIME, LOCK_LEASE_TIME, TimeUnit.SECONDS);
+
+            if (!isLocked) {
+                log.warn("Failed to acquire lock for SKU: {} - concurrent operation in progress", sku);
+                throw new ResponseStatusException(HttpStatus.CONFLICT,
+                        "Another operation is in progress for this product. Please try again.");
+            }
+
+            log.debug("Acquired distributed lock for SKU: {}", sku);
+
+            Inventory inventory = repository.findBySku(sku)
+                    .orElseThrow(
+                            () -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                                    "Inventory not found for SKU: " + sku));
+
+            if (inventory.getReservedQuantity() < quantity) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Cannot confirm more than reserved quantity");
+            }
+
+            boolean wasInStock = inventory.getQuantity() > 0;
+
+            inventory.setReservedQuantity(inventory.getReservedQuantity() - quantity);
+            inventory.setQuantity(inventory.getQuantity() - quantity);
+
+            Inventory updated = repository.save(inventory);
+            log.info("Confirmed reservation of {} units for SKU: {}", quantity, sku);
+
+            // If total quantity hits 0, send out-of-stock event
+            if (wasInStock && updated.getQuantity() == 0) {
+                publishStockStatusEvent(sku, false);
+            }
+
+            return mapToResponse(updated);
+
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.error("Lock acquisition interrupted for SKU: {}", sku, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Failed to process confirmation due to interruption");
+        } finally {
+            if (lock.isHeldByCurrentThread()) {
+                lock.unlock();
+                log.debug("Released distributed lock for SKU: {}", sku);
+            }
         }
-
-        boolean wasInStock = inventory.getQuantity() > 0;
-
-        inventory.setReservedQuantity(inventory.getReservedQuantity() - quantity);
-        inventory.setQuantity(inventory.getQuantity() - quantity);
-
-        Inventory updated = repository.save(inventory);
-        log.info("Confirmed reservation of {} units for SKU: {}", quantity, sku);
-
-        // If total quantity hits 0, send out-of-stock event
-        if (wasInStock && updated.getQuantity() == 0) {
-            publishStockStatusEvent(sku, false);
-        }
-
-        return mapToResponse(updated);
     }
 
     @Transactional
@@ -176,29 +263,55 @@ public class InventoryService {
             throw new IllegalArgumentException("Quantity cannot be null or negative");
         }
 
-        Inventory inventory = repository.findBySku(sku)
-                .orElseThrow(
-                        () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Inventory not found for SKU: " + sku));
+        RLock lock = redissonClient.getLock(LOCK_PREFIX + sku);
 
-        boolean wasAvailable = inventory.getAvailableQuantity() > 0;
+        try {
+            boolean isLocked = lock.tryLock(LOCK_WAIT_TIME, LOCK_LEASE_TIME, TimeUnit.SECONDS);
 
-        int quantityDiff = newQuantity - inventory.getQuantity();
-        inventory.setQuantity(newQuantity);
-        inventory.setAvailableQuantity(inventory.getAvailableQuantity() + quantityDiff);
+            if (!isLocked) {
+                log.warn("Failed to acquire lock for SKU: {} - concurrent operation in progress", sku);
+                throw new ResponseStatusException(HttpStatus.CONFLICT,
+                        "Another operation is in progress for this product. Please try again.");
+            }
 
-        Inventory updated = repository.save(inventory);
-        log.info("Updated inventory for SKU: {} to quantity: {}", sku, newQuantity);
+            log.debug("Acquired distributed lock for SKU: {}", sku);
 
-        // Send out-of-stock event if available quantity drops to 0
-        if (wasAvailable && updated.getAvailableQuantity() <= 0) {
-            publishStockStatusEvent(sku, false);
+            Inventory inventory = repository.findBySku(sku)
+                    .orElseThrow(
+                            () -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                                    "Inventory not found for SKU: " + sku));
+
+            boolean wasAvailable = inventory.getAvailableQuantity() > 0;
+
+            int quantityDiff = newQuantity - inventory.getQuantity();
+            inventory.setQuantity(newQuantity);
+            inventory.setAvailableQuantity(inventory.getAvailableQuantity() + quantityDiff);
+
+            Inventory updated = repository.save(inventory);
+            log.info("Updated inventory for SKU: {} to quantity: {}", sku, newQuantity);
+
+            // Send out-of-stock event if available quantity drops to 0
+            if (wasAvailable && updated.getAvailableQuantity() <= 0) {
+                publishStockStatusEvent(sku, false);
+            }
+            // Send back-in-stock event if available quantity goes above 0
+            else if (!wasAvailable && updated.getAvailableQuantity() > 0) {
+                publishStockStatusEvent(sku, true);
+            }
+
+            return mapToResponse(updated);
+
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.error("Lock acquisition interrupted for SKU: {}", sku, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Failed to process update due to interruption");
+        } finally {
+            if (lock.isHeldByCurrentThread()) {
+                lock.unlock();
+                log.debug("Released distributed lock for SKU: {}", sku);
+            }
         }
-        // Send back-in-stock event if available quantity goes above 0
-        else if (!wasAvailable && updated.getAvailableQuantity() > 0) {
-            publishStockStatusEvent(sku, true);
-        }
-
-        return mapToResponse(updated);
     }
 
     private InventoryResponse mapToResponse(Inventory inventory) {

@@ -73,13 +73,15 @@ services:
       context: ./services/inventory-service
       dockerfile: Dockerfile
     container_name: inventory-service
-    depends_on: [postgres, kafka]
+    depends_on: [postgres, kafka, redis]
     environment:
       SERVER_PORT: 8083
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/inventory_db
       SPRING_DATASOURCE_USERNAME: admin
       SPRING_DATASOURCE_PASSWORD: password
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
     networks: [backend]
     #ports: ["8083:8083"]
     healthcheck:
@@ -229,9 +231,26 @@ services:
       retries: 5
       start_period: 40s
 
+  # Redis Service for Distributed Locks and Caching
+  redis:
+    image: redis:7-alpine
+    container_name: retail-engine-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks: [backend]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
 networks:
   backend:
     driver: bridge
 
 volumes:
   postgres_data:
+  redis_data:
