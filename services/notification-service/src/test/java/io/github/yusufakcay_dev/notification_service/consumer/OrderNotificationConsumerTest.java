@@ -30,6 +30,7 @@ import static org.mockito.Mockito.*;
 @DirtiesContext
 class OrderNotificationConsumerTest {
 
+    @SuppressWarnings("resource")
     @Container
     static KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.5.0"))
             .withExposedPorts(9093);
@@ -42,6 +43,7 @@ class OrderNotificationConsumerTest {
     @Autowired
     private KafkaTemplate<String, OrderNotificationEvent> kafkaTemplate;
 
+    @SuppressWarnings("removal")
     @MockBean
     private EmailService emailService;
 
