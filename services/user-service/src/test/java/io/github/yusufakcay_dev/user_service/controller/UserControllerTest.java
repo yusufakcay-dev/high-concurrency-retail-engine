@@ -26,6 +26,7 @@ class UserControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
+    @SuppressWarnings("removal")
     @MockBean
     private UserRepository userRepository;
 

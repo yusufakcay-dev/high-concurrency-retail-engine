@@ -33,6 +33,6 @@ resilience4j:
 
 logging:
   level:
-    io.github.yusufakcay_dev: DEBUG
-    org.springframework.kafka: WARN
-    org.testcontainers: INFO
+    "[io.github.yusufakcay_dev]": DEBUG
+    "[org.springframework.kafka]": WARN
+    "[org.testcontainers]": INFO

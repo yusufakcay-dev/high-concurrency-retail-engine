@@ -16,5 +16,5 @@ application:
 
 logging:
   level:
-    io.github.yusufakcay_dev: DEBUG
-    org.testcontainers: INFO
+    "[io.github.yusufakcay_dev]": DEBUG
+    "[org.testcontainers]": INFO

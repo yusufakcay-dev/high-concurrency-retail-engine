@@ -28,6 +28,7 @@ class ProductControllerTest {
         @Autowired
         private MockMvc mockMvc;
 
+        @SuppressWarnings("removal")
         @MockBean
         private ProductService service;
 

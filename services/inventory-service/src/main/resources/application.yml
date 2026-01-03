@@ -12,7 +12,7 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
-        format_sql: true
+        "[format_sql]": true
     show-sql: false
   data:
     redis:
@@ -30,8 +30,8 @@ spring:
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
-        spring.json.trusted.packages: "*"
-        spring.json.type.mapping: "productCreatedEvent:io.github.yusufakcay_dev.inventory_service.dto.ProductCreatedEvent"
+        "[spring.json.trusted.packages]": "*"
+        "[spring.json.type.mapping]": "productCreatedEvent:io.github.yusufakcay_dev.inventory_service.dto.ProductCreatedEvent"
 
 server:
   port: ${SERVER_PORT:8083}
@@ -62,5 +62,5 @@ app:
 
 logging:
   level:
-    io.github.yusufakcay_dev: INFO
-    org.springframework.kafka: INFO
+    "[io.github.yusufakcay_dev]": INFO
+    "[org.springframework.kafka]": INFO

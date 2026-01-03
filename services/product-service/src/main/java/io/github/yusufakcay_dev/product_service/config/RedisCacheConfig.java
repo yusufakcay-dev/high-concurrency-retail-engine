@@ -1,7 +1,6 @@
 package io.github.yusufakcay_dev.product_service.config;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.cache.RedisCacheManagerBuilderCustomizer;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CachingConfigurer;
 import org.springframework.cache.interceptor.CacheErrorHandler;
@@ -21,53 +20,59 @@ import java.time.Duration;
 @Slf4j
 public class RedisCacheConfig implements CachingConfigurer {
 
-    @Bean
-    public CacheManager cacheManager(RedisConnectionFactory redisConnectionFactory) {
-        log.info("===== Initializing Redis CacheManager =====");
+        @Bean
+        public CacheManager cacheManager(RedisConnectionFactory redisConnectionFactory) {
+                log.info("===== Initializing Redis CacheManager =====");
 
-        RedisCacheConfiguration cacheConfig = RedisCacheConfiguration.defaultCacheConfig()
-                .entryTtl(Duration.ofMinutes(10))
-                .serializeKeysWith(
-                        RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
-                .serializeValuesWith(
-                        RedisSerializationContext.SerializationPair
-                                .fromSerializer(new GenericJackson2JsonRedisSerializer()))
-                .disableCachingNullValues();
+                RedisCacheConfiguration cacheConfig = RedisCacheConfiguration.defaultCacheConfig()
+                                .entryTtl(Duration.ofMinutes(10))
+                                .serializeKeysWith(
+                                                RedisSerializationContext.SerializationPair
+                                                                .fromSerializer(new StringRedisSerializer()))
+                                .serializeValuesWith(
+                                                RedisSerializationContext.SerializationPair
+                                                                .fromSerializer(new GenericJackson2JsonRedisSerializer()))
+                                .disableCachingNullValues();
 
-        return RedisCacheManager.builder(redisConnectionFactory)
-                .cacheDefaults(cacheConfig)
-                .withCacheConfiguration("products", cacheConfig)
-                .build();
-    }
+                return RedisCacheManager.builder(redisConnectionFactory)
+                                .cacheDefaults(cacheConfig)
+                                .withCacheConfiguration("products", cacheConfig)
+                                .build();
+        }
 
-    @Override
-    public CacheErrorHandler errorHandler() {
-        return new SimpleCacheErrorHandler() {
-            @Override
-            public void handleCacheGetError(RuntimeException exception, org.springframework.cache.Cache cache,
-                    Object key) {
-                log.error("Cache GET error for key '{}' in cache '{}': {}", key, cache.getName(),
-                        exception.getMessage());
-            }
+        @Override
+        public CacheErrorHandler errorHandler() {
+                return new SimpleCacheErrorHandler() {
+                        @Override
+                        public void handleCacheGetError(RuntimeException exception,
+                                        org.springframework.cache.Cache cache,
+                                        Object key) {
+                                log.error("Cache GET error for key '{}' in cache '{}': {}", key, cache.getName(),
+                                                exception.getMessage());
+                        }
 
-            @Override
-            public void handleCachePutError(RuntimeException exception, org.springframework.cache.Cache cache,
-                    Object key, Object value) {
-                log.error("Cache PUT error for key '{}' in cache '{}': {}", key, cache.getName(),
-                        exception.getMessage());
-            }
+                        @Override
+                        public void handleCachePutError(RuntimeException exception,
+                                        org.springframework.cache.Cache cache,
+                                        Object key, Object value) {
+                                log.error("Cache PUT error for key '{}' in cache '{}': {}", key, cache.getName(),
+                                                exception.getMessage());
+                        }
 
-            @Override
-            public void handleCacheEvictError(RuntimeException exception, org.springframework.cache.Cache cache,
-                    Object key) {
-                log.error("Cache EVICT error for key '{}' in cache '{}': {}", key, cache.getName(),
-                        exception.getMessage());
-            }
+                        @Override
+                        public void handleCacheEvictError(RuntimeException exception,
+                                        org.springframework.cache.Cache cache,
+                                        Object key) {
+                                log.error("Cache EVICT error for key '{}' in cache '{}': {}", key, cache.getName(),
+                                                exception.getMessage());
+                        }
 
-            @Override
-            public void handleCacheClearError(RuntimeException exception, org.springframework.cache.Cache cache) {
-                log.error("Cache CLEAR error in cache '{}': {}", cache.getName(), exception.getMessage());
-            }
-        };
-    }
+                        @Override
+                        public void handleCacheClearError(RuntimeException exception,
+                                        org.springframework.cache.Cache cache) {
+                                log.error("Cache CLEAR error in cache '{}': {}", cache.getName(),
+                                                exception.getMessage());
+                        }
+                };
+        }
 }

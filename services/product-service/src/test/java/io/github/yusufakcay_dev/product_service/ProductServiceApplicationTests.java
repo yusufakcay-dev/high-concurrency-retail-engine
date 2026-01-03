@@ -12,6 +12,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 })
 class ProductServiceApplicationTests {
 
+	@SuppressWarnings("removal")
 	@MockBean
 	private ProductStockStatusConsumer productStockStatusConsumer;
 

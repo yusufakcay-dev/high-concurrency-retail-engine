@@ -10,6 +10,7 @@ import org.testcontainers.utility.DockerImageName;
  * Singleton Testcontainers configuration for payment-service tests.
  * Containers are started once and reused across all test classes.
  */
+@SuppressWarnings({ "resource", "deprecation" })
 public abstract class TestContainersConfig {
 
     protected static final PostgreSQLContainer<?> postgres;

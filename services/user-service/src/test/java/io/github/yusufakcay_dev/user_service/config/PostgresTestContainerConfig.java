@@ -9,6 +9,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
  * Uses singleton pattern - container is started once and reused by all tests.
  * This significantly improves test execution time.
  */
+@SuppressWarnings("resource")
 public abstract class PostgresTestContainerConfig {
 
     // Singleton container - started once, reused by all tests

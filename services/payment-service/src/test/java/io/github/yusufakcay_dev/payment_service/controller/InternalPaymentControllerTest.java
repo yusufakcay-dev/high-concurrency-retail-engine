@@ -28,6 +28,7 @@ class InternalPaymentControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @SuppressWarnings("removal")
     @MockBean
     private PaymentService paymentService;
 

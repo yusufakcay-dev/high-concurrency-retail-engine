@@ -1,0 +1,14 @@
+{
+  "properties": [
+    {
+      "name": "notification.email.mock",
+      "type": "java.lang.String",
+      "description": "A description for 'notification.email.mock'"
+    },
+    {
+      "name": "notification.email.from",
+      "type": "java.lang.String",
+      "description": "A description for 'notification.email.from'"
+    }
+  ]
+}

@@ -74,6 +74,7 @@ class IdempotencyIntegrationTest extends AbstractIntegrationTest {
         registry.add("payment-service.url", () -> "http://localhost:" + paymentMock.port());
     }
 
+    @SuppressWarnings("deprecation")
     @BeforeEach
     void setUp() {
         inventoryMock.resetAll();

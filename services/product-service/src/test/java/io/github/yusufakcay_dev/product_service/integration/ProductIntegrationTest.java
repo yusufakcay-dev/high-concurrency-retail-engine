@@ -57,15 +57,18 @@ import static org.awaitility.Awaitility.await;
 @Testcontainers
 class ProductIntegrationTest {
 
+    @SuppressWarnings("resource")
     @Container
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15-alpine")
             .withDatabaseName("productdb")
             .withUsername("test")
             .withPassword("test");
 
+    @SuppressWarnings("deprecation")
     @Container
     static KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.5.0"));
 
+    @SuppressWarnings("resource")
     @Container
     static GenericContainer<?> redis = new GenericContainer<>(DockerImageName.parse("redis:7-alpine"))
             .withExposedPorts(6379);

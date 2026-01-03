@@ -23,6 +23,7 @@ import org.testcontainers.utility.DockerImageName;
 @Testcontainers
 public abstract class AbstractIntegrationTest {
 
+        @SuppressWarnings("resource")
         @Container
         protected static final PostgreSQLContainer<?> postgresContainer = new PostgreSQLContainer<>(
                         DockerImageName.parse("postgres:15-alpine"))
@@ -30,11 +31,13 @@ public abstract class AbstractIntegrationTest {
                         .withUsername("test")
                         .withPassword("test");
 
+        @SuppressWarnings("resource")
         @Container
         protected static final GenericContainer<?> redisContainer = new GenericContainer<>(
                         DockerImageName.parse("redis:7-alpine"))
                         .withExposedPorts(6379);
 
+        @SuppressWarnings("deprecation")
         @Container
         protected static final KafkaContainer kafkaContainer = new KafkaContainer(
                         DockerImageName.parse("confluentinc/cp-kafka:7.5.0"));

@@ -32,6 +32,7 @@ class AuthControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @SuppressWarnings("removal")
     @MockBean
     private AuthService authService;
 
