@@ -136,7 +136,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Copy docker-compose.yml to Server
+      - name: Copy docker-compose-prod.yml to Server
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.OCI_HOST }}
@@ -162,10 +162,10 @@ jobs:
 
             # 2. Pull new images 
             # (Assumes your service workflows pushed updated images to DockerHub)
-            docker compose pull
+            docker compose -f docker-compose-prod.yml pull
 
             # 3. Restart services
-            docker compose up -d
+            docker compose -f docker-compose-prod.yml up -d --remove-orphans
 
             # 4. Clean up space
-            docker image prune -f
+            docker image prune -af --filter "until=24h"
