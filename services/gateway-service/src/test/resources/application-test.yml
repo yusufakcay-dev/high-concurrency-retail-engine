@@ -1,0 +1,4 @@
+application:
+  security:
+    jwt:
+      secret: test-jwt-secret-key-for-testing-purposes-minimum-256-bits-required-for-hs256-algorithm

@@ -14,22 +14,35 @@ public class SecurityConfig {
         public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
                 http.csrf(ServerHttpSecurity.CsrfSpec::disable)
                                 .authorizeExchange(ex -> ex
-                                                .pathMatchers(
-                                                                "/swagger-ui.html", "/swagger-ui/**", "/webjars/**",
-                                                                "/v3/api-docs/**", "/user-service/v3/api-docs/**",
+                                                // Swagger/OpenAPI documentation - public
+                                                .pathMatchers("/swagger-ui.html", "/swagger-ui/**", "/webjars/**")
+                                                .permitAll()
+                                                .pathMatchers("/v3/api-docs/**", "/user-service/v3/api-docs/**",
                                                                 "/product-service/v3/api-docs/**",
                                                                 "/inventory-service/v3/api-docs/**",
-                                                                "/order-service/v3/api-docs/**",
-                                                                "/auth/**", "/user-service/auth/**", "/user/me",
-                                                                "/user-service/user/me",
-                                                                "/products", "/products/**",
-                                                                "/api/orders", "/api/orders/**",
-                                                                "/actuator/health", "/actuator/health/**",
-                                                                "/actuator/info", "/api/inventories/**",
-                                                                "/inventories/**", "/api/inventory/",
-                                                                "/payments/webhook")
+                                                                "/order-service/v3/api-docs/**")
                                                 .permitAll()
-                                                .anyExchange().authenticated())
+
+                                                // Authentication - public
+                                                .pathMatchers("/auth/**", "/user-service/auth/**").permitAll()
+
+                                                // Payment webhooks and redirects - public (for Stripe)
+                                                .pathMatchers("/payments/webhook", "/payments/success",
+                                                                "/payments/cancel")
+                                                .permitAll()
+
+                                                // Health endpoints - public (for monitoring/load balancers)
+                                                .pathMatchers("/actuator/health", "/actuator/health/**",
+                                                                "/actuator/info")
+                                                .permitAll()
+
+                                                // Products - public read, secured write (handled by
+                                                // AuthenticationFilter)
+                                                .pathMatchers("/products", "/products/**").permitAll()
+
+                                                // All other routes are handled by AuthenticationFilter in routes config
+                                                // Spring Security just prevents CSRF and basic auth prompts
+                                                .anyExchange().permitAll())
                                 .httpBasic(ServerHttpSecurity.HttpBasicSpec::disable);
                 return http.build();
         }

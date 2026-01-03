@@ -30,6 +30,7 @@ jobs:
       order: ${{ steps.filter.outputs.order }}
       payment: ${{ steps.filter.outputs.payment }}
       gateway: ${{ steps.filter.outputs.gateway }}
+      notification: ${{ steps.filter.outputs.notification }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -51,6 +52,8 @@ jobs:
               - 'services/payment-service/**'
             gateway:
               - 'services/gateway-service/**'
+            notification:
+              - 'services/notification-service/**'
 
   user-service:
     name: User Service
@@ -92,3 +95,9 @@ jobs:
     uses: ./.github/workflows/gateway-service-ci.yml
     secrets:
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
+
+  notification-service:
+    name: Notification Service
+    needs: changes
+    if: ${{ needs.changes.outputs.notification == 'true' }}
+    uses: ./.github/workflows/notification-service-ci.yml

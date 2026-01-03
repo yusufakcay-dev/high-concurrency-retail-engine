@@ -2,9 +2,9 @@ spring:
   application:
     name: notification-service
   kafka:
-    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     consumer:
-      group-id: notification-service-group
+      group-id: notification-service-group-test
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
@@ -12,8 +12,13 @@ spring:
         "[spring.json.trusted.packages]": "*"
         "[spring.json.use.type.headers]": false
         "[spring.json.value.default.type]": io.github.yusufakcay_dev.notification_service.event.OrderNotificationEvent
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        "[spring.json.add.type.headers]": false
   mail:
-    host: mailpit
+    host: localhost
     port: 1025
     properties:
       mail:
@@ -22,21 +27,6 @@ spring:
           starttls:
             enable: false
 
-server:
-  port: ${SERVER_PORT:8086}
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info
-  endpoint:
-    health:
-      show-details: always
-  tracing:
-    sampling:
-      probability: 1.0
-# Email configuration
 notification:
   email:
-    from: ${NOTIFICATION_EMAIL_FROM:noreply@retailengine.com}
+    from: test@retailengine.com

@@ -133,7 +133,6 @@ services:
       dockerfile: Dockerfile
     container_name: payment-service
     depends_on: [postgres, kafka]
-    ports: ["8085:8085"] # Exposed for Stripe webhooks
     environment:
       SERVER_PORT: 8085
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/payment_db
@@ -141,8 +140,8 @@ services:
       SPRING_DATASOURCE_PASSWORD: password
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       STRIPE_API_KEY: ${STRIPE_API_KEY}
-      STRIPE_SUCCESS_URL: ${STRIPE_SUCCESS_URL:-http://localhost:8080/payment/success}
-      STRIPE_CANCEL_URL: ${STRIPE_CANCEL_URL:-http://localhost:8080/payment/cancel}
+      STRIPE_SUCCESS_URL: ${STRIPE_SUCCESS_URL:-http://localhost:8080/payments/success}
+      STRIPE_CANCEL_URL: ${STRIPE_CANCEL_URL:-http://localhost:8080/payments/cancel}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
     networks: [backend]
     healthcheck:
@@ -162,10 +161,11 @@ services:
       context: ./services/notification-service
       dockerfile: Dockerfile
     container_name: notification-service
-    depends_on: [kafka]
+    depends_on: [kafka, mailpit]
     environment:
       SERVER_PORT: 8086
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      NOTIFICATION_EMAIL_FROM: noreply@retailengine.com
     networks: [backend]
     healthcheck:
       test:
@@ -252,6 +252,16 @@ services:
       interval: 10s
       timeout: 3s
       retries: 5
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: mailpit
+    ports:
+      - "1025:1025" # SMTP server
+      - "8025:8025" # Web UI
+    networks:
+      - backend
+    restart: unless-stopped
 
 networks:
   backend:

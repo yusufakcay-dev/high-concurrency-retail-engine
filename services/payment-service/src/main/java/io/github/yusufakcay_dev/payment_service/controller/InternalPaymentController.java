@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -158,5 +159,85 @@ public class InternalPaymentController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error processing webhook: " + e.getMessage());
         }
+    }
+
+    /**
+     * Success page - Customer is redirected here after successful Stripe payment
+     * Accessible via Gateway at /payments/success
+     */
+    @GetMapping(value = "/success", produces = MediaType.TEXT_HTML_VALUE)
+    public String paymentSuccess() {
+        log.info("Customer redirected to payment success page");
+        return "<!DOCTYPE html>" +
+                "<html>" +
+                "<head>" +
+                "    <meta charset='UTF-8'>" +
+                "    <meta name='viewport' content='width=device-width, initial-scale=1.0'>" +
+                "    <title>Payment Successful</title>" +
+                "    <style>" +
+                "        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }"
+                +
+                "        .container { background: white; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); padding: 60px 40px; text-align: center; max-width: 500px; }"
+                +
+                "        .icon { font-size: 80px; margin-bottom: 20px; animation: bounce 1s ease-in-out; }" +
+                "        @keyframes bounce { 0%, 20%, 50%, 80%, 100% { transform: translateY(0); } 40% { transform: translateY(-20px); } 60% { transform: translateY(-10px); } }"
+                +
+                "        h1 { color: #10b981; margin: 0 0 20px; font-size: 32px; }" +
+                "        p { color: #6b7280; font-size: 18px; line-height: 1.6; margin: 0; }" +
+                "        .note { margin-top: 30px; padding: 20px; background: #f0fdf4; border-left: 4px solid #10b981; border-radius: 8px; color: #065f46; font-size: 16px; }"
+                +
+                "    </style>" +
+                "</head>" +
+                "<body>" +
+                "    <div class='container'>" +
+                "        <div class='icon'>✅</div>" +
+                "        <h1>Payment Successful!</h1>" +
+                "        <p>Thank you for your purchase. Your payment has been processed successfully.</p>" +
+                "        <div class='note'>" +
+                "            📧 We are processing your order now.<br>" +
+                "            You will receive a confirmation email shortly." +
+                "        </div>" +
+                "    </div>" +
+                "</body>" +
+                "</html>";
+    }
+
+    /**
+     * Cancel page - Customer is redirected here when payment is cancelled
+     * Accessible via Gateway at /payments/cancel
+     */
+    @GetMapping(value = "/cancel", produces = MediaType.TEXT_HTML_VALUE)
+    public String paymentCancel() {
+        log.info("Customer redirected to payment cancel page");
+        return "<!DOCTYPE html>" +
+                "<html>" +
+                "<head>" +
+                "    <meta charset='UTF-8'>" +
+                "    <meta name='viewport' content='width=device-width, initial-scale=1.0'>" +
+                "    <title>Payment Cancelled</title>" +
+                "    <style>" +
+                "        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #f87171 0%, #dc2626 100%); margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }"
+                +
+                "        .container { background: white; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); padding: 60px 40px; text-align: center; max-width: 500px; }"
+                +
+                "        .icon { font-size: 80px; margin-bottom: 20px; }" +
+                "        h1 { color: #ef4444; margin: 0 0 20px; font-size: 32px; }" +
+                "        p { color: #6b7280; font-size: 18px; line-height: 1.6; margin: 0; }" +
+                "        .note { margin-top: 30px; padding: 20px; background: #fef2f2; border-left: 4px solid #ef4444; border-radius: 8px; color: #991b1b; font-size: 16px; }"
+                +
+                "    </style>" +
+                "</head>" +
+                "<body>" +
+                "    <div class='container'>" +
+                "        <div class='icon'>❌</div>" +
+                "        <h1>Payment Cancelled</h1>" +
+                "        <p>Your payment has been cancelled. No charges have been made to your account.</p>" +
+                "        <div class='note'>" +
+                "            If you encountered any issues or need assistance,<br>" +
+                "            please contact our support team." +
+                "        </div>" +
+                "    </div>" +
+                "</body>" +
+                "</html>";
     }
 }

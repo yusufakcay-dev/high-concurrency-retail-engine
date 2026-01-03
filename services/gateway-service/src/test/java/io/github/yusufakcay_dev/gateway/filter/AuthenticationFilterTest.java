@@ -31,19 +31,15 @@ class AuthenticationFilterTest {
     private GatewayFilterChain filterChain;
 
     private AuthenticationFilter authenticationFilter;
-    private RouteValidator routeValidator;
 
     @BeforeEach
     void setUp() {
-        routeValidator = mock(RouteValidator.class);
-        authenticationFilter = new AuthenticationFilter(routeValidator, jwtUtil);
+        authenticationFilter = new AuthenticationFilter(jwtUtil);
         when(filterChain.filter(any())).thenReturn(Mono.empty());
     }
 
     @Test
     void shouldRejectRequestWithoutAuthHeader() {
-        routeValidator.isSecured = request -> true;
-
         MockServerHttpRequest request = MockServerHttpRequest
                 .get("/inventories/123")
                 .build();
@@ -58,8 +54,6 @@ class AuthenticationFilterTest {
 
     @Test
     void shouldRejectRequestWithInvalidAuthHeaderFormat() {
-        routeValidator.isSecured = request -> true;
-
         MockServerHttpRequest request = MockServerHttpRequest
                 .get("/inventories/123")
                 .header(HttpHeaders.AUTHORIZATION, "InvalidFormat token123")
@@ -74,7 +68,6 @@ class AuthenticationFilterTest {
 
     @Test
     void shouldAllowRequestWithValidToken() {
-        routeValidator.isSecured = request -> true;
         String validToken = "valid.jwt.token";
 
         when(jwtUtil.extractUsername(validToken)).thenReturn("testuser");
@@ -95,7 +88,6 @@ class AuthenticationFilterTest {
 
     @Test
     void shouldForbidNonAdminPostToProducts() {
-        routeValidator.isSecured = request -> true;
         String validToken = "valid.jwt.token";
 
         when(jwtUtil.extractUsername(validToken)).thenReturn("regularuser");
@@ -117,7 +109,6 @@ class AuthenticationFilterTest {
 
     @Test
     void shouldAllowAdminPostToProducts() {
-        routeValidator.isSecured = request -> true;
         String validToken = "valid.jwt.token";
 
         when(jwtUtil.extractUsername(validToken)).thenReturn("admin");
@@ -138,7 +129,6 @@ class AuthenticationFilterTest {
 
     @Test
     void shouldForbidNonAdminAccessToInventories() {
-        routeValidator.isSecured = request -> true;
         String validToken = "valid.jwt.token";
 
         when(jwtUtil.extractUsername(validToken)).thenReturn("regularuser");
@@ -155,21 +145,5 @@ class AuthenticationFilterTest {
         filter.filter(exchange, filterChain).block();
 
         assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
-    }
-
-    @Test
-    void shouldSkipAuthForOpenEndpoints() {
-        routeValidator.isSecured = request -> false;
-
-        MockServerHttpRequest request = MockServerHttpRequest
-                .post("/auth/login")
-                .build();
-        MockServerWebExchange exchange = MockServerWebExchange.from(request);
-
-        GatewayFilter filter = authenticationFilter.apply(new AuthenticationFilter.Config());
-        filter.filter(exchange, filterChain).block();
-
-        verify(filterChain).filter(any());
-        verify(jwtUtil, never()).validateToken(any());
     }
 }
