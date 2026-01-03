@@ -60,44 +60,46 @@ jobs:
     needs: changes
     if: ${{ needs.changes.outputs.user == 'true' }}
     uses: ./.github/workflows/user-service-ci.yml
+    secrets: inherit
 
   product-service:
     name: Product Service
     needs: changes
     if: ${{ needs.changes.outputs.product == 'true' }}
     uses: ./.github/workflows/product-service-ci.yml
+    secrets: inherit
 
   inventory-service:
     name: Inventory Service
     needs: changes
     if: ${{ needs.changes.outputs.inventory == 'true' }}
     uses: ./.github/workflows/inventory-service-ci.yml
+    secrets: inherit
 
   order-service:
     name: Order Service
     needs: changes
     if: ${{ needs.changes.outputs.order == 'true' }}
     uses: ./.github/workflows/order-service-ci.yml
+    secrets: inherit
 
   payment-service:
     name: Payment Service
     needs: changes
     if: ${{ needs.changes.outputs.payment == 'true' }}
     uses: ./.github/workflows/payment-service-ci.yml
-    secrets:
-      STRIPE_API_KEY: ${{ secrets.STRIPE_API_KEY }}
-      STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+    secrets: inherit
 
   gateway-service:
     name: Gateway Service
     needs: changes
     if: ${{ needs.changes.outputs.gateway == 'true' }}
     uses: ./.github/workflows/gateway-service-ci.yml
-    secrets:
-      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+    secrets: inherit
 
   notification-service:
     name: Notification Service
     needs: changes
     if: ${{ needs.changes.outputs.notification == 'true' }}
     uses: ./.github/workflows/notification-service-ci.yml
+    secrets: inherit
