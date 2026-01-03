@@ -1,0 +1,78 @@
+name: Inventory Service CI
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - "services/inventory-service/**"
+      - ".github/workflows/inventory-service-ci.yml"
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "services/inventory-service/**"
+      - ".github/workflows/inventory-service-ci.yml"
+
+jobs:
+  test:
+    name: Test Inventory Service
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: "17"
+          distribution: "temurin"
+          cache: maven
+
+      - name: Run tests
+        working-directory: ./services/inventory-service
+        run: mvn clean test -B
+
+      - name: Generate test report
+        if: always()
+        uses: dorny/test-reporter@v1
+        with:
+          name: Inventory Service Test Results
+          path: services/inventory-service/target/surefire-reports/*.xml
+          reporter: java-junit
+          fail-on-error: true
+
+  build:
+    name: Build Inventory Service
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'push'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: "17"
+          distribution: "temurin"
+          cache: maven
+
+      - name: Build with Maven
+        working-directory: ./services/inventory-service
+        run: mvn clean package -DskipTests -B
+
+      - name: Build Docker image
+        working-directory: ./services/inventory-service
+        run: docker build -t inventory-service:${{ github.sha }} .
+
+      - name: Save Docker image as artifact
+        run: |
+          docker save inventory-service:${{ github.sha }} | gzip > inventory-service-${{ github.sha }}.tar.gz
+
+      - name: Upload Docker image
+        uses: actions/upload-artifact@v4
+        with:
+          name: inventory-service-image
+          path: inventory-service-${{ github.sha }}.tar.gz
+          retention-days: 7

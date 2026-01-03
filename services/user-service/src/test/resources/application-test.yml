@@ -1,16 +1,13 @@
 spring:
   datasource:
-    url: jdbc:h2:mem:testdb
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
+    driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
       ddl-auto: create-drop
-    show-sql: true
+    show-sql: false
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.H2Dialect
+        dialect: org.hibernate.dialect.PostgreSQLDialect
 
 application:
   security:
@@ -20,3 +17,4 @@ application:
 logging:
   level:
     io.github.yusufakcay_dev: DEBUG
+    org.testcontainers: INFO

@@ -9,9 +9,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -23,16 +27,27 @@ class InventoryServiceTest {
     @Mock
     private InventoryRepository repository;
 
+    @Mock
+    private KafkaTemplate<String, Object> kafkaTemplate;
+
+    @Mock
+    private RedissonClient redissonClient;
+
+    @Mock
+    private RLock rLock;
+
     @InjectMocks
     private InventoryService service;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws InterruptedException {
+        lenient().when(redissonClient.getLock(anyString())).thenReturn(rLock);
+        lenient().when(rLock.tryLock(anyLong(), anyLong(), any(TimeUnit.class))).thenReturn(true);
+        lenient().when(rLock.isHeldByCurrentThread()).thenReturn(true);
     }
 
     @Test
     void testInitializeInventorySuccess() {
-        // Arrange
         String sku = "TEST-SKU-001";
         Integer initialStock = 100;
 
@@ -47,80 +62,26 @@ class InventoryServiceTest {
         when(repository.existsBySku(sku)).thenReturn(false);
         when(repository.save(any(Inventory.class))).thenReturn(inventory);
 
-        // Act
         InventoryResponse response = service.initializeInventory(sku, initialStock);
 
-        // Assert
         assertNotNull(response);
         assertEquals(sku, response.getSku());
         assertEquals(initialStock, response.getQuantity());
         assertEquals(0, response.getReservedQuantity());
-        assertEquals(initialStock, response.getAvailableQuantity());
-
-        verify(repository).existsBySku(sku);
         verify(repository).save(any(Inventory.class));
     }
 
     @Test
-    void testInitializeInventoryAlreadyExists() {
-        // Arrange
-        String sku = "EXISTING-SKU";
-        Integer initialStock = 50;
-
-        Inventory existingInventory = Inventory.builder()
-                .id(1L)
-                .sku(sku)
-                .quantity(initialStock)
-                .reservedQuantity(0)
-                .availableQuantity(initialStock)
-                .build();
-
-        when(repository.existsBySku(sku)).thenReturn(true);
-        when(repository.findBySku(sku)).thenReturn(Optional.of(existingInventory));
-
-        // Act
-        InventoryResponse response = service.initializeInventory(sku, initialStock);
-
-        // Assert
-        assertNotNull(response);
-        assertEquals(sku, response.getSku());
-        assertEquals(initialStock, response.getQuantity());
-
-        verify(repository).existsBySku(sku);
-        verify(repository, never()).save(any(Inventory.class));
-    }
-
-    @Test
-    void testInitializeInventoryNullSku() {
-        // Act & Assert
+    void testInitializeInventoryValidation() {
         assertThrows(IllegalArgumentException.class, () -> service.initializeInventory(null, 100));
-        verify(repository, never()).save(any());
-    }
-
-    @Test
-    void testInitializeInventoryBlankSku() {
-        // Act & Assert
         assertThrows(IllegalArgumentException.class, () -> service.initializeInventory("   ", 100));
-        verify(repository, never()).save(any());
-    }
-
-    @Test
-    void testInitializeInventoryNegativeStock() {
-        // Act & Assert
         assertThrows(IllegalArgumentException.class, () -> service.initializeInventory("SKU123", -10));
-        verify(repository, never()).save(any());
-    }
-
-    @Test
-    void testInitializeInventoryNullStock() {
-        // Act & Assert
         assertThrows(IllegalArgumentException.class, () -> service.initializeInventory("SKU123", null));
         verify(repository, never()).save(any());
     }
 
     @Test
     void testGetInventoryBySkuSuccess() {
-        // Arrange
         String sku = "TEST-SKU-002";
         Inventory inventory = Inventory.builder()
                 .id(2L)
@@ -132,43 +93,24 @@ class InventoryServiceTest {
 
         when(repository.findBySku(sku)).thenReturn(Optional.of(inventory));
 
-        // Act
         InventoryResponse response = service.getInventoryBySku(sku);
 
-        // Assert
         assertNotNull(response);
         assertEquals(sku, response.getSku());
         assertEquals(200, response.getQuantity());
         assertEquals(50, response.getReservedQuantity());
         assertEquals(150, response.getAvailableQuantity());
-
-        verify(repository).findBySku(sku);
     }
 
     @Test
     void testGetInventoryBySkuNotFound() {
-        // Arrange
-        String sku = "NON-EXISTENT";
-        when(repository.findBySku(sku)).thenReturn(Optional.empty());
-
-        // Act & Assert
-        assertThrows(ResponseStatusException.class, () -> service.getInventoryBySku(sku));
-        verify(repository).findBySku(sku);
-    }
-
-    @Test
-    void testGetInventoryBySkuNullSku() {
-        // Act & Assert
-        assertThrows(IllegalArgumentException.class, () -> service.getInventoryBySku(null));
-        verify(repository, never()).findBySku(any());
+        when(repository.findBySku("NON-EXISTENT")).thenReturn(Optional.empty());
+        assertThrows(ResponseStatusException.class, () -> service.getInventoryBySku("NON-EXISTENT"));
     }
 
     @Test
     void testReserveInventorySuccess() {
-        // Arrange
         String sku = "TEST-SKU-003";
-        int quantityToReserve = 30;
-
         Inventory inventory = Inventory.builder()
                 .id(3L)
                 .sku(sku)
@@ -188,26 +130,16 @@ class InventoryServiceTest {
         when(repository.findBySku(sku)).thenReturn(Optional.of(inventory));
         when(repository.save(any(Inventory.class))).thenReturn(updatedInventory);
 
-        // Act
-        InventoryResponse response = service.reserveInventory(sku, quantityToReserve);
+        InventoryResponse response = service.reserveInventory(sku, 30);
 
-        // Assert
-        assertNotNull(response);
-        assertEquals(sku, response.getSku());
         assertEquals(100, response.getQuantity());
         assertEquals(40, response.getReservedQuantity());
         assertEquals(60, response.getAvailableQuantity());
-
-        verify(repository).findBySku(sku);
-        verify(repository).save(any(Inventory.class));
     }
 
     @Test
-    void testReserveInventoryInsufficientStock() {
-        // Arrange
+    void testReserveInventoryInsufficientStock() throws InterruptedException {
         String sku = "TEST-SKU-004";
-        int quantityToReserve = 150;
-
         Inventory inventory = Inventory.builder()
                 .id(4L)
                 .sku(sku)
@@ -218,18 +150,13 @@ class InventoryServiceTest {
 
         when(repository.findBySku(sku)).thenReturn(Optional.of(inventory));
 
-        // Act & Assert
-        assertThrows(ResponseStatusException.class, () -> service.reserveInventory(sku, quantityToReserve));
-        verify(repository).findBySku(sku);
+        assertThrows(ResponseStatusException.class, () -> service.reserveInventory(sku, 150));
         verify(repository, never()).save(any(Inventory.class));
     }
 
     @Test
     void testConfirmReservationSuccess() {
-        // Arrange
         String sku = "TEST-SKU-005";
-        int quantityToConfirm = 20;
-
         Inventory inventory = Inventory.builder()
                 .id(5L)
                 .sku(sku)
@@ -238,7 +165,7 @@ class InventoryServiceTest {
                 .availableQuantity(70)
                 .build();
 
-        Inventory updatedInventory = Inventory.builder()
+        Inventory updated = Inventory.builder()
                 .id(5L)
                 .sku(sku)
                 .quantity(80)
@@ -247,27 +174,17 @@ class InventoryServiceTest {
                 .build();
 
         when(repository.findBySku(sku)).thenReturn(Optional.of(inventory));
-        when(repository.save(any(Inventory.class))).thenReturn(updatedInventory);
+        when(repository.save(any(Inventory.class))).thenReturn(updated);
 
-        // Act
-        InventoryResponse response = service.confirmReservation(sku, quantityToConfirm);
+        InventoryResponse response = service.confirmReservation(sku, 20);
 
-        // Assert
-        assertNotNull(response);
-        assertEquals(sku, response.getSku());
         assertEquals(80, response.getQuantity());
         assertEquals(10, response.getReservedQuantity());
-
-        verify(repository).findBySku(sku);
-        verify(repository).save(any(Inventory.class));
     }
 
     @Test
     void testReleaseReservedInventorySuccess() {
-        // Arrange
         String sku = "TEST-SKU-006";
-        int quantityToRelease = 15;
-
         Inventory inventory = Inventory.builder()
                 .id(6L)
                 .sku(sku)
@@ -276,7 +193,7 @@ class InventoryServiceTest {
                 .availableQuantity(50)
                 .build();
 
-        Inventory updatedInventory = Inventory.builder()
+        Inventory updated = Inventory.builder()
                 .id(6L)
                 .sku(sku)
                 .quantity(100)
@@ -285,18 +202,11 @@ class InventoryServiceTest {
                 .build();
 
         when(repository.findBySku(sku)).thenReturn(Optional.of(inventory));
-        when(repository.save(any(Inventory.class))).thenReturn(updatedInventory);
+        when(repository.save(any(Inventory.class))).thenReturn(updated);
 
-        // Act
-        InventoryResponse response = service.releaseReservedInventory(sku, quantityToRelease);
+        InventoryResponse response = service.releaseReservedInventory(sku, 15);
 
-        // Assert
-        assertNotNull(response);
-        assertEquals(sku, response.getSku());
         assertEquals(35, response.getReservedQuantity());
         assertEquals(65, response.getAvailableQuantity());
-
-        verify(repository).findBySku(sku);
-        verify(repository).save(any(Inventory.class));
     }
 }

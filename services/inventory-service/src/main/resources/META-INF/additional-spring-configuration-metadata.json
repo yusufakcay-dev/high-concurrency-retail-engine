@@ -1,0 +1,9 @@
+{
+  "properties": [
+    {
+      "name": "app.topics.product-created",
+      "type": "java.lang.String",
+      "description": "Topic name for product created events"
+    }
+  ]
+}

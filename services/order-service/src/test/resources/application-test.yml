@@ -1,0 +1,38 @@
+# Test configuration for order-service integration tests
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+  kafka:
+    consumer:
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+  cloud:
+    compatibility-verifier:
+      enabled: false
+
+# WireMock URLs - will be overridden by @DynamicPropertySource
+inventory-service:
+  url: http://localhost:8081
+
+payment-service:
+  url: http://localhost:8082
+
+# Disable circuit breaker for simpler testing
+resilience4j:
+  circuitbreaker:
+    instances:
+      inventory-service:
+        registerHealthIndicator: false
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 3
+        failureRateThreshold: 50
+        waitDurationInOpenState: 5s
+        permittedNumberOfCallsInHalfOpenState: 2
+
+logging:
+  level:
+    io.github.yusufakcay_dev: DEBUG
+    org.springframework.kafka: WARN
+    org.testcontainers: INFO
