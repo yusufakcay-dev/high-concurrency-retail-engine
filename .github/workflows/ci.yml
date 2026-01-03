@@ -3,6 +3,14 @@ name: Monorepo CI
 on:
   push:
     branches: [main, develop]
+  workflow_dispatch:
+    inputs:
+      force_all:
+        description: "Force run all service tests?"
+        required: true
+        type: boolean
+        default: false
+
   pull_request:
     branches: [main, develop]
 
