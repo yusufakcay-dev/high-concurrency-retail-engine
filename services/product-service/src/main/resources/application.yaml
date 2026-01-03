@@ -54,7 +54,7 @@ spring:
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
-        spring.json.trusted.packages: "*"
+        "[spring.json.trusted.packages]": "*"
         "[spring.json.type.mapping]": "io.github.yusufakcay_dev.inventory_service.dto.ProductStockStatusEvent:io.github.yusufakcay_dev.product_service.dto.ProductStockStatusEvent"
 
 app:

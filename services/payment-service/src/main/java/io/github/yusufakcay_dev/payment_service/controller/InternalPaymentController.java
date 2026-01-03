@@ -1,9 +1,7 @@
 package io.github.yusufakcay_dev.payment_service.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.stripe.exception.SignatureVerificationException;
 import com.stripe.model.Event;
-import com.stripe.model.PaymentIntent;
 import com.stripe.model.checkout.Session;
 import com.stripe.net.Webhook;
 import io.github.yusufakcay_dev.payment_service.dto.PaymentRequest;
@@ -30,7 +28,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class InternalPaymentController {
 
     private final PaymentService paymentService;
-    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Value("${stripe.webhook-secret}")
     private String webhookSecret;
@@ -53,6 +50,7 @@ public class InternalPaymentController {
      * SECURITY: This endpoint REQUIRES valid Stripe signature verification.
      * Requests without valid signatures will be rejected with 400 Bad Request.
      */
+    @SuppressWarnings("deprecation")
     @PostMapping({ "/webhooks/stripe", "/payments/webhook" })
     public ResponseEntity<String> handleStripeWebhook(
             @RequestBody String payload,

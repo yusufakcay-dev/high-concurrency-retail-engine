@@ -1,0 +1,34 @@
+{
+  "properties": [
+    {
+      "name": "spring.kafka.producer.retry.backoff.ms",
+      "type": "java.lang.String",
+      "description": "A description for 'spring.kafka.producer.retry.backoff.ms'"
+    },
+    {
+      "name": "spring.kafka.producer.request.timeout.ms",
+      "type": "java.lang.String",
+      "description": "A description for 'spring.kafka.producer.request.timeout.ms'"
+    },
+    {
+      "name": "spring.kafka.producer.delivery.timeout.ms",
+      "type": "java.lang.String",
+      "description": "A description for 'spring.kafka.producer.delivery.timeout.ms'"
+    },
+    {
+      "name": "spring.kafka.producer.linger.ms",
+      "type": "java.lang.String",
+      "description": "A description for 'spring.kafka.producer.linger.ms'"
+    },
+    {
+      "name": "spring.kafka.producer.batch.size",
+      "type": "java.lang.String",
+      "description": "A description for 'spring.kafka.producer.batch.size'"
+    },
+    {
+      "name": "app.topics.product-created",
+      "type": "java.lang.String",
+      "description": "A description for 'app.topics.product-created'"
+    }
+  ]
+}
