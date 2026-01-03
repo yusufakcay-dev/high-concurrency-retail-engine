@@ -237,6 +237,7 @@ services:
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
+      KAFKA_OPTS: "-Dzookeeper.4lw.commands.whitelist=ruok"
     networks: [backend]
     healthcheck:
       test:
@@ -244,7 +245,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 10s
+      start_period: 30s
 
   kafka:
     image: confluentinc/cp-kafka:7.4.0
@@ -269,8 +270,8 @@ services:
         ]
       interval: 10s
       timeout: 10s
-      retries: 5
-      start_period: 40s
+      retries: 10
+      start_period: 60s
 
   redis:
     image: redis:7-alpine
