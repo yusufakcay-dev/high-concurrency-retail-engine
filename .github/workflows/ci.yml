@@ -103,3 +103,69 @@ jobs:
     if: ${{ needs.changes.outputs.notification == 'true' }}
     uses: ./.github/workflows/notification-service-ci.yml
     secrets: inherit
+
+    # 3. DEPLOY TO OCI (The "Final Branch")
+  deploy:
+    name: Deploy to OCI
+    runs-on: ubuntu-latest
+    # This job waits for ALL service jobs to finish
+    needs:
+      [
+        user-service,
+        product-service,
+        inventory-service,
+        order-service,
+        payment-service,
+        gateway-service,
+        notification-service,
+      ]
+
+    # CONDITION: Only deploy if:
+    # 1. We are on the 'main' branch (don't deploy PRs or develop branch to prod)
+    # 2. The previous jobs were successful (default behavior, but skipped jobs are considered success)
+    if: ${{ github.ref == 'refs/heads/main' && always() }}
+
+    steps:
+      # Check if any dependency failed. If a test failed, we MUST NOT deploy.
+      - name: Verify Workflow Status
+        run: |
+          if [[ "${{ needs.user-service.result }}" == "failure" || "${{ needs.product-service.result }}" == "failure" || "${{ needs.inventory-service.result }}" == "failure" || "${{ needs.order-service.result }}" == "failure" || "${{ needs.payment-service.result }}" == "failure" || "${{ needs.gateway-service.result }}" == "failure" || "${{ needs.notification-service.result }}" == "failure" ]]; then
+            echo "One or more services failed CI tests. Aborting deployment."
+            exit 1
+          fi
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Copy docker-compose.yml to Server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.OCI_HOST }}
+          username: ${{ secrets.OCI_USERNAME }}
+          key: ${{ secrets.OCI_SSH_KEY }}
+          source: "docker-compose-prod.yml,infrastructure"
+          target: "/home/ubuntu/retail-engine"
+
+      - name: SSH and Deploy
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.OCI_HOST }}
+          username: ${{ secrets.OCI_USERNAME }}
+          key: ${{ secrets.OCI_SSH_KEY }}
+          script: |
+            cd /home/ubuntu/retail-engine
+
+            # 1. Update Environment Variables
+            echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" > .env
+            echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
+            echo "STRIPE_API_KEY=${{ secrets.STRIPE_API_KEY }}" >> .env
+            echo "STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }}" >> .env
+
+            # 2. Pull new images 
+            # (Assumes your service workflows pushed updated images to DockerHub)
+            docker compose pull
+
+            # 3. Restart services
+            docker compose up -d
+
+            # 4. Clean up space
+            docker image prune -f
