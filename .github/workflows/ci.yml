@@ -154,11 +154,16 @@ jobs:
           script: |
             cd /home/ubuntu/retail-engine
 
-            # 1. Update Environment Variables
-            echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" > .env
-            echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
-            echo "STRIPE_API_KEY=${{ secrets.STRIPE_API_KEY }}" >> .env
-            echo "STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }}" >> .env
+            # 1. ENV file setup)
+            cat > .env << EOF
+            DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
+            POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            STRIPE_API_KEY=${{ secrets.STRIPE_API_KEY }}
+            STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }}
+            STRIPE_SUCCESS_URL=http://${{ secrets.OCI_HOST }}/payments/success
+            STRIPE_CANCEL_URL=http://${{ secrets.OCI_HOST }}/payments/cancel
+            EOF
 
             # 2. Pull new images 
             # (Assumes your service workflows pushed updated images to DockerHub)
