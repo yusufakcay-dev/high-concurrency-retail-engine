@@ -1,0 +1,81 @@
+name: Monorepo CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      user: ${{ steps.filter.outputs.user }}
+      product: ${{ steps.filter.outputs.product }}
+      inventory: ${{ steps.filter.outputs.inventory }}
+      order: ${{ steps.filter.outputs.order }}
+      payment: ${{ steps.filter.outputs.payment }}
+      gateway: ${{ steps.filter.outputs.gateway }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check for changes
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            user:
+              - 'services/user-service/**'
+            product:
+              - 'services/product-service/**'
+            inventory:
+              - 'services/inventory-service/**'
+            order:
+              - 'services/order-service/**'
+            payment:
+              - 'services/payment-service/**'
+            gateway:
+              - 'services/gateway-service/**'
+
+  user-service:
+    name: User Service
+    needs: changes
+    if: ${{ needs.changes.outputs.user == 'true' }}
+    uses: ./.github/workflows/user-service-ci.yml
+
+  product-service:
+    name: Product Service
+    needs: changes
+    if: ${{ needs.changes.outputs.product == 'true' }}
+    uses: ./.github/workflows/product-service-ci.yml
+
+  inventory-service:
+    name: Inventory Service
+    needs: changes
+    if: ${{ needs.changes.outputs.inventory == 'true' }}
+    uses: ./.github/workflows/inventory-service-ci.yml
+
+  order-service:
+    name: Order Service
+    needs: changes
+    if: ${{ needs.changes.outputs.order == 'true' }}
+    uses: ./.github/workflows/order-service-ci.yml
+
+  payment-service:
+    name: Payment Service
+    needs: changes
+    if: ${{ needs.changes.outputs.payment == 'true' }}
+    uses: ./.github/workflows/payment-service-ci.yml
+    secrets:
+      STRIPE_API_KEY: ${{ secrets.STRIPE_API_KEY }}
+      STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+
+  gateway-service:
+    name: Gateway Service
+    needs: changes
+    if: ${{ needs.changes.outputs.gateway == 'true' }}
+    uses: ./.github/workflows/gateway-service-ci.yml
+    secrets:
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}

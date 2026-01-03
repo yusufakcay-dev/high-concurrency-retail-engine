@@ -1,16 +1,12 @@
 name: Payment Service CI
 
 on:
-  push:
-    branches: [main, develop]
-    paths:
-      - "services/payment-service/**"
-      - ".github/workflows/payment-service-ci.yml"
-  pull_request:
-    branches: [main, develop]
-    paths:
-      - "services/payment-service/**"
-      - ".github/workflows/payment-service-ci.yml"
+  workflow_call:
+    secrets:
+      STRIPE_API_KEY:
+        required: false
+      STRIPE_WEBHOOK_SECRET:
+        required: false
 
 jobs:
   test:
@@ -32,23 +28,20 @@ jobs:
         working-directory: ./services/payment-service
         run: mvn clean test -B
         env:
-          STRIPE_API_KEY: ${{ secrets.STRIPE_API_KEY || 'sk_test_dummy_key_for_ci' }}
-          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET || 'whsec_dummy_secret_for_ci' }}
+          STRIPE_API_KEY: ${{ secrets.STRIPE_API_KEY != '' && secrets.STRIPE_API_KEY || 'sk_test_dummy_key_for_ci' }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET != '' && secrets.STRIPE_WEBHOOK_SECRET || 'whsec_dummy_secret_for_ci' }}
 
-      - name: Generate test report
+      - name: Publish test results
         if: always()
-        uses: dorny/test-reporter@v1
+        uses: EnricoMi/publish-unit-test-result-action@v2
         with:
-          name: Payment Service Test Results
-          path: services/payment-service/target/surefire-reports/*.xml
-          reporter: java-junit
-          fail-on-error: true
+          files: services/payment-service/target/surefire-reports/*.xml
+          check_name: Payment Service Test Results
 
   build:
     name: Build Payment Service
     runs-on: ubuntu-latest
     needs: test
-    if: github.event_name == 'push'
 
     steps:
       - name: Checkout code
