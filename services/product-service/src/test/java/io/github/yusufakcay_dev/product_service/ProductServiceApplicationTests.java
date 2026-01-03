@@ -6,9 +6,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
 @SpringBootTest(properties = {
-		"spring.kafka.bootstrap-servers=localhost:9999",
+		"spring.kafka.bootstrap-servers=localhost:9092",
 		"spring.data.redis.host=localhost",
-		"spring.data.redis.port=6666"
+		"spring.data.redis.port=6379"
 })
 class ProductServiceApplicationTests {
 
