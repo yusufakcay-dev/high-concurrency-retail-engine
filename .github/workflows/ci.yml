@@ -161,8 +161,8 @@ jobs:
             JWT_SECRET=${{ secrets.JWT_SECRET }}
             STRIPE_API_KEY=${{ secrets.STRIPE_API_KEY }}
             STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }}
-            STRIPE_SUCCESS_URL=http://${{ secrets.OCI_HOST }}/payments/success
-            STRIPE_CANCEL_URL=http://${{ secrets.OCI_HOST }}/payments/cancel
+            STRIPE_SUCCESS_URL=http://${{ secrets.OCI_HOST }}:8080/payments/success
+            STRIPE_CANCEL_URL=http://${{ secrets.OCI_HOST }}:8080/payments/cancel
             OCI_HOST=${{ secrets.OCI_HOST }}
             EOF
 
