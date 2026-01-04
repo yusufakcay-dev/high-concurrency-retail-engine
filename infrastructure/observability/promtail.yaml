@@ -10,18 +10,50 @@ clients:
 
 scrape_configs:
   - job_name: docker
-    # 1. READ FROM DOCKER SOCKET (The "Smart" Way)
     docker_sd_configs:
       - host: unix:///var/run/docker.sock
         refresh_interval: 5s
-        # No filters = Find ALL containers
 
-    # 2. TRANSFORM LABELS (Create 'container_name' from the mess)
     relabel_configs:
+      # Extract container name (removes leading slash)
       - source_labels: ["__meta_docker_container_name"]
         regex: "/(.*)"
         target_label: "container_name"
+      
+      # Extract container ID
       - source_labels: ["__meta_docker_container_id"]
         target_label: "container_id"
+      
+      # Extract service name from Docker Compose label
+      - source_labels: ["__meta_docker_container_label_com_docker_compose_service"]
+        target_label: "service"
+      
+      # Extract project name from Docker Compose
+      - source_labels: ["__meta_docker_container_label_com_docker_compose_project"]
+        target_label: "job"
+      
+      # Extract log stream (stdout/stderr)
       - source_labels: ["__meta_docker_container_log_stream"]
         target_label: "stream"
+
+    # Parse JSON logs and extract fields
+    pipeline_stages:
+      # Try to parse as JSON
+      - json:
+          expressions:
+            level: level
+            message: message
+            timestamp: "@timestamp"
+            service_name: service_name
+            trace_id: traceId
+            span_id: spanId
+      
+      # Extract labels from parsed JSON
+      - labels:
+          level:
+          service_name:
+      
+      # Set timestamp if available
+      - timestamp:
+          source: timestamp
+          format: RFC3339Nano
