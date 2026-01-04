@@ -31,6 +31,10 @@ services:
       SPRING_DATASOURCE_USERNAME: admin
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
+      OTEL_SERVICE_NAME: user-service
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4318
+      OTEL_METRICS_EXPORTER: "none"
+      OTEL_LOGS_EXPORTER: "none"
     networks: [backend]
     healthcheck:
       test:
@@ -57,6 +61,10 @@ services:
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      OTEL_SERVICE_NAME: product-service
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4318
+      OTEL_METRICS_EXPORTER: "none"
+      OTEL_LOGS_EXPORTER: "none"
     networks: [backend]
     healthcheck:
       test:
@@ -84,6 +92,10 @@ services:
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       SPRING_REDIS_HOST: redis
       SPRING_REDIS_PORT: 6379
+      OTEL_SERVICE_NAME: inventory-service
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4318
+      OTEL_METRICS_EXPORTER: "none"
+      OTEL_LOGS_EXPORTER: "none"
     networks: [backend]
     #ports: ["8083:8083"]
     healthcheck:
@@ -114,6 +126,11 @@ services:
       INVENTORY_SERVICE_URL: http://inventory-service:8083
       SPRING_REDIS_HOST: redis
       SPRING_REDIS_PORT: 6379
+      OTEL_SERVICE_NAME: order-service
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4318
+      OTEL_METRICS_EXPORTER: "none"
+      OTEL_LOGS_EXPORTER: "none"
+
     networks: [backend]
     healthcheck:
       test:
@@ -143,6 +160,10 @@ services:
       STRIPE_SUCCESS_URL: ${STRIPE_SUCCESS_URL:-http://localhost:8080/payments/success}
       STRIPE_CANCEL_URL: ${STRIPE_CANCEL_URL:-http://localhost:8080/payments/cancel}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
+      OTEL_SERVICE_NAME: payment-service
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4318
+      OTEL_METRICS_EXPORTER: "none"
+      OTEL_LOGS_EXPORTER: "none"
     networks: [backend]
     healthcheck:
       test:
@@ -166,6 +187,10 @@ services:
       SERVER_PORT: 8086
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       NOTIFICATION_EMAIL_FROM: noreply@retailengine.com
+      OTEL_SERVICE_NAME: notification-service
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4318
+      OTEL_METRICS_EXPORTER: "none"
+      OTEL_LOGS_EXPORTER: "none"
     networks: [backend]
     healthcheck:
       test:
@@ -189,6 +214,10 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      OTEL_SERVICE_NAME: gateway-service
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4318
+      OTEL_METRICS_EXPORTER: "none"
+      OTEL_LOGS_EXPORTER: "none"
     ports: ["8080:8080"]
     networks: [backend]
     healthcheck:
@@ -263,6 +292,53 @@ services:
       - backend
     restart: unless-stopped
 
+  # --- OBSERVABILITY STACK ---
+  grafana:
+    image: grafana/grafana:latest
+    ports: ["3000:3000"]
+    volumes:
+      - ./infrastructure/observability/grafana/provisioning/datasources/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+    networks: [backend] # <--- ADDED
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports: ["9090:9090"]
+    volumes:
+      - ./infrastructure/observability/prometheus.yaml:/etc/prometheus/prometheus.yml
+    networks: [backend] # <--- ADDED
+
+  tempo:
+    image: grafana/tempo:latest
+    ports: ["3200:3200", "4318:4318"]
+    volumes:
+      - ./infrastructure/observability/tempo.yaml:/etc/tempo.yaml
+    command: ["-config.file=/etc/tempo.yaml"]
+    networks: [backend] # <--- ADDED
+
+  loki:
+    image: grafana/loki:latest
+    ports: ["3100:3100"]
+    networks: [backend] # <--- ADDED
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50" # Safety cap for OCI
+          memory: 512M
+
+  # Promtail (The Log Collector)
+  promtail:
+    image: grafana/promtail:latest
+    volumes:
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - ./infrastructure/observability/promtail.yaml:/etc/promtail/config.yml
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: -config.file=/etc/promtail/config.yml
+    networks: [backend] # <--- ADDED
+    depends_on: [loki]
+
 networks:
   backend:
     driver: bridge
@@ -270,3 +346,7 @@ networks:
 volumes:
   postgres_data:
   redis_data:
+  grafana_data:
+  prometheus_data:
+  tempo_data:
+  loki_data:

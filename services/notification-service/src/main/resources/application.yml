@@ -29,10 +29,18 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,prometheus
   endpoint:
     health:
       show-details: always
+    prometheus:
+      enabled: true
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http:
+          server:
+            requests: true
   tracing:
     sampling:
       probability: 1.0
@@ -40,3 +48,7 @@ management:
 notification:
   email:
     from: ${NOTIFICATION_EMAIL_FROM:noreply@retailengine.com}
+
+logging:
+  pattern:
+    level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"

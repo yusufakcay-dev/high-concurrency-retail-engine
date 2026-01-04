@@ -48,10 +48,18 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,prometheus
   endpoint:
     health:
       show-details: always
+    prometheus:
+      enabled: true
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http:
+          server:
+            requests: true
   tracing:
     sampling:
       probability: 1.0
@@ -61,6 +69,8 @@ app:
     product-created: ${APP_TOPICS_PRODUCT_CREATED:product-created-topic}
 
 logging:
+  pattern:
+    level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
   level:
     "[io.github.yusufakcay_dev]": INFO
     "[org.springframework.kafka]": INFO

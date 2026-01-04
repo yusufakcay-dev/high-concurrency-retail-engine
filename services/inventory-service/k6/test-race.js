@@ -3,7 +3,8 @@ import { check, sleep } from "k6";
 
 // Configuration
 const BASE_URL = "http://localhost:8080";
-const JWT_TOKEN = "admin-token-placeholder"; // Replace with a valid JWT token for authentication
+const JWT_TOKEN =
+  "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiQURNSU4iLCJ1c2VySWQiOjEsInN1YiI6ImxldG9zaXByYSIsImlhdCI6MTc2NzU0ODA1NywiZXhwIjoxNzY3NjM0NDU3fQ.mhYgxOF22tDhX-0DVNGKO_WCMKb0l9GReGcUCB104MQ"; // Replace with a valid JWT token for authentication
 const TEST_SKU = "test";
 
 export const options = {

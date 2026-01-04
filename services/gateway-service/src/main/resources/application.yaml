@@ -10,140 +10,142 @@ spring:
       port: ${REDIS_PORT:6379}
   cloud:
     gateway:
-      routes:
-        # ==================== PUBLIC ROUTES (No Auth) ====================
+      server:
+        webflux:
+          routes:
+            # ==================== PUBLIC ROUTES (No Auth) ====================
 
-        # API Documentation (Swagger) - Must come BEFORE authenticated routes
-        - id: user-service-docs
-          uri: http://user-service:8082
-          predicates:
-            - Path=/user-service/v3/api-docs/**
-          filters:
-            - RewritePath=/user-service/(?<segment>.*), /$\{segment}
+            # API Documentation (Swagger) - Must come BEFORE authenticated routes
+            - id: user-service-docs
+              uri: http://user-service:8082
+              predicates:
+                - Path=/user-service/v3/api-docs/**
+              filters:
+                - RewritePath=/user-service/(?<segment>.*), /$\{segment}
 
-        - id: product-service-docs
-          uri: http://product-service:8081
-          predicates:
-            - Path=/product-service/v3/api-docs/**
-          filters:
-            - RewritePath=/product-service/(?<segment>.*), /$\{segment}
+            - id: product-service-docs
+              uri: http://product-service:8081
+              predicates:
+                - Path=/product-service/v3/api-docs/**
+              filters:
+                - RewritePath=/product-service/(?<segment>.*), /$\{segment}
 
-        - id: inventory-service-docs
-          uri: http://inventory-service:8083
-          predicates:
-            - Path=/inventory-service/v3/api-docs/**
-          filters:
-            - RewritePath=/inventory-service/v3/api-docs(?<segment>.*), /api/v3/api-docs$\{segment}
+            - id: inventory-service-docs
+              uri: http://inventory-service:8083
+              predicates:
+                - Path=/inventory-service/v3/api-docs/**
+              filters:
+                - RewritePath=/inventory-service/v3/api-docs(?<segment>.*), /api/v3/api-docs$\{segment}
 
-        - id: order-service-docs
-          uri: http://order-service:8084
-          predicates:
-            - Path=/order-service/v3/api-docs/**
-          filters:
-            - RewritePath=/order-service/(?<segment>.*), /$\{segment}
+            - id: order-service-docs
+              uri: http://order-service:8084
+              predicates:
+                - Path=/order-service/v3/api-docs/**
+              filters:
+                - RewritePath=/order-service/(?<segment>.*), /$\{segment}
 
-        # Payment webhooks and redirects (Stripe callbacks)
-        - id: stripe-webhook
-          uri: http://payment-service:8085
-          predicates:
-            - Path=/payments/webhook
-          filters:
-            - RewritePath=/payments/webhook, /webhooks/stripe
+            # Payment webhooks and redirects (Stripe callbacks)
+            - id: stripe-webhook
+              uri: http://payment-service:8085
+              predicates:
+                - Path=/payments/webhook
+              filters:
+                - RewritePath=/payments/webhook, /webhooks/stripe
 
-        - id: payment-success
-          uri: http://payment-service:8085
-          predicates:
-            - Path=/payments/success
-          filters:
-            - RewritePath=/payments/success, /success
+            - id: payment-success
+              uri: http://payment-service:8085
+              predicates:
+                - Path=/payments/success
+              filters:
+                - RewritePath=/payments/success, /success
 
-        - id: payment-cancel
-          uri: http://payment-service:8085
-          predicates:
-            - Path=/payments/cancel
-          filters:
-            - RewritePath=/payments/cancel, /cancel
+            - id: payment-cancel
+              uri: http://payment-service:8085
+              predicates:
+                - Path=/payments/cancel
+              filters:
+                - RewritePath=/payments/cancel, /cancel
 
-        # Authentication endpoints (login, register)
-        - id: user-service-auth
-          uri: http://user-service:8082
-          predicates:
-            - Path=/auth/**
-          filters:
-            - name: RequestRateLimiter
-              args:
-                redis-rate-limiter.replenishRate: 10
-                redis-rate-limiter.burstCapacity: 20
-                key-resolver: "#{@userKeyResolver}"
+            # Authentication endpoints (login, register)
+            - id: user-service-auth
+              uri: http://user-service:8082
+              predicates:
+                - Path=/auth/**
+              filters:
+                - name: RequestRateLimiter
+                  args:
+                    redis-rate-limiter.replenishRate: 10
+                    redis-rate-limiter.burstCapacity: 20
+                    key-resolver: "#{@userKeyResolver}"
 
-        # Products - Public READ access (GET only, no authentication)
-        - id: product-service-read
-          uri: http://product-service:8081
-          predicates:
-            - Path=/products/**
-            - Method=GET
-          filters:
-            - name: RequestRateLimiter
-              args:
-                redis-rate-limiter.replenishRate: 50
-                redis-rate-limiter.burstCapacity: 100
-                key-resolver: "#{@userKeyResolver}"
+            # Products - Public READ access (GET only, no authentication)
+            - id: product-service-read
+              uri: http://product-service:8081
+              predicates:
+                - Path=/products/**
+                - Method=GET
+              filters:
+                - name: RequestRateLimiter
+                  args:
+                    redis-rate-limiter.replenishRate: 50
+                    redis-rate-limiter.burstCapacity: 100
+                    key-resolver: "#{@userKeyResolver}"
 
-        # Products - ADMIN-only WRITE (POST/PUT/DELETE require authentication)
-        - id: product-service-write
-          uri: http://product-service:8081
-          predicates:
-            - Path=/products/**
-            - Method=POST,PUT,DELETE
-          filters:
-            - AuthenticationFilter
-            - name: RequestRateLimiter
-              args:
-                redis-rate-limiter.replenishRate: 50
-                redis-rate-limiter.burstCapacity: 100
-                key-resolver: "#{@userKeyResolver}"
+            # Products - ADMIN-only WRITE (POST/PUT/DELETE require authentication)
+            - id: product-service-write
+              uri: http://product-service:8081
+              predicates:
+                - Path=/products/**
+                - Method=POST,PUT,DELETE
+              filters:
+                - AuthenticationFilter
+                - name: RequestRateLimiter
+                  args:
+                    redis-rate-limiter.replenishRate: 50
+                    redis-rate-limiter.burstCapacity: 100
+                    key-resolver: "#{@userKeyResolver}"
 
-        # ==================== AUTHENTICATED ROUTES ====================
+            # ==================== AUTHENTICATED ROUTES ====================
 
-        # User profile endpoints
-        - id: user-service-me
-          uri: http://user-service:8082
-          predicates:
-            - Path=/user/**
-          filters:
-            - AuthenticationFilter
-            - name: RequestRateLimiter
-              args:
-                redis-rate-limiter.replenishRate: 20
-                redis-rate-limiter.burstCapacity: 40
-                key-resolver: "#{@userKeyResolver}"
+            # User profile endpoints
+            - id: user-service-me
+              uri: http://user-service:8082
+              predicates:
+                - Path=/user/**
+              filters:
+                - AuthenticationFilter
+                - name: RequestRateLimiter
+                  args:
+                    redis-rate-limiter.replenishRate: 20
+                    redis-rate-limiter.burstCapacity: 40
+                    key-resolver: "#{@userKeyResolver}"
 
-        # Inventory - ADMIN only (all operations)
-        - id: inventory-service
-          uri: http://inventory-service:8083
-          predicates:
-            - Path=/inventories/**
-          filters:
-            - AuthenticationFilter
-            - RewritePath=/inventories/(?<segment>.*), /api/inventories/$\{segment}
-            - name: RequestRateLimiter
-              args:
-                redis-rate-limiter.replenishRate: 20
-                redis-rate-limiter.burstCapacity: 40
-                key-resolver: "#{@userKeyResolver}"
+            # Inventory - ADMIN only (all operations)
+            - id: inventory-service
+              uri: http://inventory-service:8083
+              predicates:
+                - Path=/inventories/**
+              filters:
+                - AuthenticationFilter
+                - RewritePath=/inventories/(?<segment>.*), /api/inventories/$\{segment}
+                - name: RequestRateLimiter
+                  args:
+                    redis-rate-limiter.replenishRate: 20
+                    redis-rate-limiter.burstCapacity: 40
+                    key-resolver: "#{@userKeyResolver}"
 
-        # Orders - Authenticated users
-        - id: order-service
-          uri: http://order-service:8084
-          predicates:
-            - Path=/api/orders/**
-          filters:
-            - AuthenticationFilter
-            - name: RequestRateLimiter
-              args:
-                redis-rate-limiter.replenishRate: 10
-                redis-rate-limiter.burstCapacity: 20
-                key-resolver: "#{@userKeyResolver}"
+            # Orders - Authenticated users
+            - id: order-service
+              uri: http://order-service:8084
+              predicates:
+                - Path=/api/orders/**
+              filters:
+                - AuthenticationFilter
+                - name: RequestRateLimiter
+                  args:
+                    redis-rate-limiter.replenishRate: 10
+                    redis-rate-limiter.burstCapacity: 20
+                    key-resolver: "#{@userKeyResolver}"
 
 springdoc:
   swagger-ui:
@@ -168,10 +170,22 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,prometheus
   endpoint:
     health:
       show-details: always
+    prometheus:
+      enabled: true
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http:
+          server:
+            requests: true
   tracing:
     sampling:
       probability: 1.0
+
+logging:
+  pattern:
+    level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"

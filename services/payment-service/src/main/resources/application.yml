@@ -12,7 +12,7 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
-        '[format_sql]': true
+        "[format_sql]": true
     show-sql: false
   kafka:
     bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
@@ -27,10 +27,18 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,prometheus
   endpoint:
     health:
       show-details: always
+    prometheus:
+      enabled: true
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http:
+          server:
+            requests: true
   tracing:
     sampling:
       probability: 1.0
@@ -41,3 +49,7 @@ stripe:
   success-url: ${STRIPE_SUCCESS_URL:http://localhost:8080/payment/success}
   cancel-url: ${STRIPE_CANCEL_URL:http://localhost:8080/payment/cancel}
   webhook-secret: ${STRIPE_WEBHOOK_SECRET}
+
+logging:
+  pattern:
+    level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
