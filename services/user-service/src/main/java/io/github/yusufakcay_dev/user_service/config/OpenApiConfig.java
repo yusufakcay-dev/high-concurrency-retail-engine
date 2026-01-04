@@ -9,24 +9,35 @@ import io.swagger.v3.oas.models.servers.Server;
 
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class OpenApiConfig {
 
+        @Value("${gateway.host:localhost}")
+        private String gatewayHost;
+
+        @Value("${gateway.port:8080}")
+        private String gatewayPort;
+
         @Bean
         public OpenAPI customOpenAPI() {
                 final String securitySchemeName = "bearerAuth";
-
-                // Define the Gateway
-                Server gatewayServer = new Server()
-                                .url("http://localhost:8080")
-                                .description("Gateway Server (Port 8080)");
+                String serverUrl = gatewayHost.startsWith("http")
+                                ? gatewayHost + ":" + gatewayPort
+                                : "http://" + gatewayHost + ":" + gatewayPort;
 
                 return new OpenAPI()
-                                .servers(List.of(gatewayServer))
-                                .info(new Info().title("User Service API").version("1.0"))
+                                .servers(List.of(
+                                                new Server()
+                                                                .url(serverUrl)
+                                                                .description("API Gateway")))
+                                .info(new Info()
+                                                .title("User Service API")
+                                                .version("1.0")
+                                                .description("User authentication and profile management"))
                                 .addSecurityItem(new SecurityRequirement().addList(securitySchemeName))
                                 .components(new Components()
                                                 .addSecuritySchemes(securitySchemeName,
