@@ -31,6 +31,10 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
       GATEWAY_HOST: ${OCI_HOST}
+      OTEL_SERVICE_NAME: user-service
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4318
+      OTEL_METRICS_EXPORTER: "none"
+      OTEL_LOGS_EXPORTER: "none"
     networks: [backend]
     healthcheck:
       test:
@@ -62,6 +66,10 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       GATEWAY_HOST: ${OCI_HOST}
+      OTEL_SERVICE_NAME: product-service
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4318
+      OTEL_METRICS_EXPORTER: "none"
+      OTEL_LOGS_EXPORTER: "none"
     networks: [backend]
     healthcheck:
       test:
@@ -94,6 +102,10 @@ services:
       SPRING_REDIS_HOST: redis
       SPRING_REDIS_PORT: 6379
       GATEWAY_HOST: ${OCI_HOST}
+      OTEL_SERVICE_NAME: inventory-service
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4318
+      OTEL_METRICS_EXPORTER: "none"
+      OTEL_LOGS_EXPORTER: "none"
     networks: [backend]
     healthcheck:
       test:
@@ -132,6 +144,10 @@ services:
       SPRING_REDIS_HOST: redis
       SPRING_REDIS_PORT: 6379
       GATEWAY_HOST: ${OCI_HOST}
+      OTEL_SERVICE_NAME: order-service
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4318
+      OTEL_METRICS_EXPORTER: "none"
+      OTEL_LOGS_EXPORTER: "none"
     networks: [backend]
     healthcheck:
       test:
@@ -163,6 +179,10 @@ services:
       STRIPE_SUCCESS_URL: ${STRIPE_SUCCESS_URL}
       STRIPE_CANCEL_URL: ${STRIPE_CANCEL_URL}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
+      OTEL_SERVICE_NAME: payment-service
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4318
+      OTEL_METRICS_EXPORTER: "none"
+      OTEL_LOGS_EXPORTER: "none"
     networks: [backend]
     healthcheck:
       test:
@@ -190,6 +210,10 @@ services:
       NOTIFICATION_EMAIL_FROM: noreply@retailengine.com
       SPRING_MAIL_HOST: mailpit
       SPRING_MAIL_PORT: 1025
+      OTEL_SERVICE_NAME: notification-service
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4318
+      OTEL_METRICS_EXPORTER: "none"
+      OTEL_LOGS_EXPORTER: "none"
     networks: [backend]
     healthcheck:
       test:
@@ -222,6 +246,10 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       GATEWAY_HOST: ${OCI_HOST}
+      OTEL_SERVICE_NAME: gateway-service
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4318
+      OTEL_METRICS_EXPORTER: "none"
+      OTEL_LOGS_EXPORTER: "none"
     ports: ["8080:8080"]
     networks: [backend]
     healthcheck:
