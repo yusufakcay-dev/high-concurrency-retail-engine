@@ -250,7 +250,8 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4318
       OTEL_METRICS_EXPORTER: "none"
       OTEL_LOGS_EXPORTER: "none"
-    ports: ["8080:8080"]
+    ports:
+      - "80:8080" # Expose on port 80
     networks: [backend]
     healthcheck:
       test:

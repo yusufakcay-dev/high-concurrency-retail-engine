@@ -2,6 +2,7 @@ target/
 *.class
 .idea/
 *.iml
+readme.md
 .vscode/
 .DS_Store
 help.md
