@@ -16,7 +16,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class OpenApiConfig {
 
-        @Value("${gateway.public-url:http://localhost:8080}")
+        @Value("${GATEWAY_PUBLIC_URL:http://localhost:8080}")
         private String gatewayUrl;
 
         @Bean
