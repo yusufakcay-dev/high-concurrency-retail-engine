@@ -164,7 +164,7 @@ jobs:
             STRIPE_SUCCESS_URL=http://${{ secrets.OCI_HOST }}:8080/payments/success
             STRIPE_CANCEL_URL=http://${{ secrets.OCI_HOST }}:8080/payments/cancel
             OCI_HOST=${{ secrets.OCI_HOST }}
-            gateway.public-url=${{ secrets.GATEWAY_HOST }}
+            GATEWAY_PUBLIC_URL=${{ secrets.GATEWAY_HOST }}
             GRAFANA_ADMIN_PASSWORD=${{ secrets.GRAFANA_ADMIN_PASSWORD }}
             EOF
 
