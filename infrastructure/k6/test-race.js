@@ -1,5 +1,5 @@
 import http from "k6/http";
-import { check, sleep } from "k6";
+import { check } from "k6";
 
 // Configuration
 const BASE_URL = "https://retail.yusufakcay.dev";
@@ -8,16 +8,33 @@ const JWT_TOKEN =
 const TEST_SKU = "test";
 
 export const options = {
-  stages: [
-    { duration: "10s", target: 500 }, // Ramp up to 500 users in 10s
-    { duration: "30s", target: 500 }, // Stay at 500 users for 30s
-    { duration: "10s", target: 1000 }, // SPIKE to 1000 users in 10s
-    { duration: "20s", target: 1000 }, // Hold spike at 1000 users for 20s
-    { duration: "10s", target: 0 }, // Ramp down to 0
-  ],
+  discardResponseBodies: true, // Critical for high RPS
+  scenarios: {
+    // 🚀 NEW EXECUTOR: Controls RPS, not Users
+    api_stress: {
+      // Allocate enough VUs to handle the load (k6 will reuse them)
+      preAllocatedVUs: 1000,
+      maxVUs: 5000, // Ceiling to prevent crashing your computer
+
+      stages: [
+        // 1. JIT WARM UP: Gentle load to compile Java byte-code
+        { target: 500, duration: "60s" }, // Hold 500 RPS for 1 min
+
+        // 2. RAMP UP: Climb to the summit
+        { target: 5000, duration: "30s" }, // Go to 5000 RPS
+
+        // 3. SUSTAIN: Hold the high note
+        { target: 5000, duration: "1m" }, // Stay at 5000 RPS
+
+        // 4. COOLDOWN
+        { target: 0, duration: "10s" },
+      ],
+    },
+  },
   thresholds: {
-    http_req_duration: ["p(95)<3000"], // 95% under 3s (higher due to contention)
-    http_req_failed: ["rate<0.5"], // Allow up to 50% lock conflicts
+    http_req_duration: ["p(95)<3000"],
+    // We expect conflicts (409), but 500 errors should be low
+    http_req_failed: ["rate<0.01"],
   },
 };
 
@@ -45,9 +62,6 @@ export default function () {
   } else {
     console.error(`❌ Status: ${response.status} - ${response.body}`);
   }
-
-  // Small sleep to simulate realistic behavior
-  sleep(0.05);
 }
 
 export function teardown() {
