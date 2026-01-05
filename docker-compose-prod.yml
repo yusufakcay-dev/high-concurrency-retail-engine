@@ -106,9 +106,6 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4318
       OTEL_METRICS_EXPORTER: "none"
       OTEL_LOGS_EXPORTER: "none"
-      SERVER_TOMCAT_THREADS_MAX: 1000
-      SERVER_TOMCAT_ACCEPT_COUNT: 2000
-      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: 50
     networks: [backend]
     healthcheck:
       test:
@@ -253,8 +250,6 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4318
       OTEL_METRICS_EXPORTER: "none"
       OTEL_LOGS_EXPORTER: "none"
-      SERVER_TOMCAT_THREADS_MAX: 1000
-      SERVER_TOMCAT_ACCEPT_COUNT: 2000
     ports:
       - "80:8080" # Expose on port 80
     networks: [backend]

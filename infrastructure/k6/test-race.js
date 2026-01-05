@@ -12,6 +12,8 @@ export const options = {
   scenarios: {
     // 🚀 NEW EXECUTOR: Controls RPS, not Users
     api_stress: {
+      executor: "ramping-arrival-rate",
+
       // Allocate enough VUs to handle the load (k6 will reuse them)
       preAllocatedVUs: 1000,
       maxVUs: 5000, // Ceiling to prevent crashing your computer
