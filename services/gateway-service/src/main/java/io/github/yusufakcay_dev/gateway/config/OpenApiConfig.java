@@ -6,40 +6,37 @@ import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
+
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.List;
-
 @Configuration
 public class OpenApiConfig {
 
-        @Value("${gateway.host:localhost}")
-        private String gatewayHost;
-
-        @Value("${gateway.port:8080}")
-        private String gatewayPort;
+        @Value("${gateway.public-url:http://localhost:8080}")
+        private String gatewayUrl;
 
         @Bean
         public OpenAPI customOpenAPI() {
-                String serverUrl = gatewayHost.startsWith("http")
-                                ? gatewayHost + ":" + gatewayPort
-                                : "http://" + gatewayHost + ":" + gatewayPort;
+                final String securitySchemeName = "bearerAuth";
 
                 return new OpenAPI()
                                 .servers(List.of(
                                                 new Server()
-                                                                .url(serverUrl)
+                                                                .url(gatewayUrl)
                                                                 .description("API Gateway")))
                                 .info(new Info()
-                                                .title("Retail Engine API Gateway")
+                                                .title("Gateway Service API")
                                                 .version("1.0")
-                                                .description("High Concurrency Retail Engine - API Gateway"))
-                                .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
+                                                .description("Retail engine API Gateway"))
+                                .addSecurityItem(new SecurityRequirement().addList(securitySchemeName))
                                 .components(new Components()
-                                                .addSecuritySchemes("bearerAuth",
+                                                .addSecuritySchemes(securitySchemeName,
                                                                 new SecurityScheme()
+                                                                                .name(securitySchemeName)
                                                                                 .type(SecurityScheme.Type.HTTP)
                                                                                 .scheme("bearer")
                                                                                 .bearerFormat("JWT")));

@@ -16,23 +16,17 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class OpenApiConfig {
 
-        @Value("${gateway.host:localhost}")
-        private String gatewayHost;
-
-        @Value("${gateway.port:8080}")
-        private String gatewayPort;
+        @Value("${gateway.public-url:http://localhost:8080}")
+        private String gatewayUrl;
 
         @Bean
         public OpenAPI customOpenAPI() {
                 final String securitySchemeName = "bearerAuth";
-                String serverUrl = gatewayHost.startsWith("http")
-                                ? gatewayHost + ":" + gatewayPort
-                                : "http://" + gatewayHost + ":" + gatewayPort;
 
                 return new OpenAPI()
                                 .servers(List.of(
                                                 new Server()
-                                                                .url(serverUrl)
+                                                                .url(gatewayUrl)
                                                                 .description("API Gateway")))
                                 .info(new Info()
                                                 .title("Inventory Service API")

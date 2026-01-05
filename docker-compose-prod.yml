@@ -30,7 +30,7 @@ services:
       SPRING_DATASOURCE_USERNAME: admin
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
-      GATEWAY_HOST: ${OCI_HOST}
+      gateway.public-url: ${GATEWAY_HOST}
       OTEL_SERVICE_NAME: user-service
       OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4318
       OTEL_METRICS_EXPORTER: "none"
@@ -65,7 +65,7 @@ services:
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      GATEWAY_HOST: ${OCI_HOST}
+      gateway.public-url: ${GATEWAY_HOST}
       OTEL_SERVICE_NAME: product-service
       OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4318
       OTEL_METRICS_EXPORTER: "none"
@@ -101,7 +101,7 @@ services:
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       SPRING_REDIS_HOST: redis
       SPRING_REDIS_PORT: 6379
-      GATEWAY_HOST: ${OCI_HOST}
+      gateway.public-url: ${GATEWAY_HOST}
       OTEL_SERVICE_NAME: inventory-service
       OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4318
       OTEL_METRICS_EXPORTER: "none"
@@ -143,7 +143,7 @@ services:
       INVENTORY_SERVICE_URL: http://inventory-service:8083
       SPRING_REDIS_HOST: redis
       SPRING_REDIS_PORT: 6379
-      GATEWAY_HOST: ${OCI_HOST}
+      gateway.public-url: ${GATEWAY_HOST}
       OTEL_SERVICE_NAME: order-service
       OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4318
       OTEL_METRICS_EXPORTER: "none"
@@ -245,7 +245,7 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      GATEWAY_HOST: ${OCI_HOST}
+      gateway.public-url: ${GATEWAY_HOST}
       OTEL_SERVICE_NAME: gateway-service
       OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4318
       OTEL_METRICS_EXPORTER: "none"
