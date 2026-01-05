@@ -2,9 +2,9 @@ import http from "k6/http";
 import { check, sleep } from "k6";
 
 // Configuration
-const BASE_URL = "http://localhost:8080";
+const BASE_URL = "https://retail.yusufakcay.dev";
 const JWT_TOKEN =
-  "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiQURNSU4iLCJ1c2VySWQiOjEsInN1YiI6ImxldG9zaXByYSIsImlhdCI6MTc2NzU0ODA1NywiZXhwIjoxNzY3NjM0NDU3fQ.mhYgxOF22tDhX-0DVNGKO_WCMKb0l9GReGcUCB104MQ"; // Replace with a valid JWT token for authentication
+  "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiQURNSU4iLCJ1c2VySWQiOjEsInN1YiI6ImxldG9zaXByYSIsImlhdCI6MTc2NzU3ODM4OSwiZXhwIjoxNzY3NjY0Nzg5fQ.hdzoup6Y6AEFBqkOztYvuRtnt3G1jZ7dxD5hT6wLSuY"; // Replace with a valid JWT token for authentication
 const TEST_SKU = "test";
 
 export const options = {
