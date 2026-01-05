@@ -1,6 +1,7 @@
 package io.github.yusufakcay_dev.gateway.config;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.gateway.filter.ratelimit.KeyResolver;
 import org.springframework.cloud.gateway.filter.ratelimit.RedisRateLimiter;
 import org.springframework.context.annotation.Bean;
@@ -9,6 +10,7 @@ import org.springframework.context.annotation.Primary;
 import reactor.core.publisher.Mono;
 
 @Configuration
+@ConditionalOnProperty(name = "application.rate-limiter.enabled", havingValue = "true", matchIfMissing = true)
 @Slf4j
 public class RateLimiterConfig {
 

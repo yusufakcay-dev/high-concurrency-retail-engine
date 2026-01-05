@@ -165,6 +165,8 @@ application:
   security:
     jwt:
       secret: ${JWT_SECRET}
+  rate-limiter:
+    enabled: ${RATE_LIMITER_ENABLED:true}
 
 management:
   endpoints:

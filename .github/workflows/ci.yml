@@ -166,6 +166,7 @@ jobs:
             OCI_HOST=${{ secrets.OCI_HOST }}
             GATEWAY_PUBLIC_URL=${{ secrets.GATEWAY_HOST }}
             GRAFANA_ADMIN_PASSWORD=${{ secrets.GRAFANA_ADMIN_PASSWORD }}
+            RATE_LIMITER_ENABLED=${{ secrets.RATE_LIMITER_ENABLED }}
             EOF
 
             # 2. Pull new images 

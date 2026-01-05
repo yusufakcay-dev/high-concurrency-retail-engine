@@ -214,6 +214,7 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      RATE_LIMITER_ENABLED: ${RATE_LIMITER_ENABLED:-true}
       OTEL_SERVICE_NAME: gateway-service
       OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4318
       OTEL_METRICS_EXPORTER: "none"
