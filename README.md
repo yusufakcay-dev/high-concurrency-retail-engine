@@ -3,14 +3,14 @@
 <div align="center">
 
 ![Java](https://img.shields.io/badge/Java-17-orange?style=for-the-badge&logo=openjdk)
-![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2-green?style=for-the-badge&logo=springboot)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5-green?style=for-the-badge&logo=springboot)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue?style=for-the-badge&logo=postgresql)
 ![Redis](https://img.shields.io/badge/Redis-7-red?style=for-the-badge&logo=redis)
 ![Kafka](https://img.shields.io/badge/Apache%20Kafka-7.4-black?style=for-the-badge&logo=apachekafka)
 ![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=for-the-badge&logo=docker)
 ![Stripe](https://img.shields.io/badge/Stripe-Payments-635BFF?style=for-the-badge&logo=stripe)
-![Grafana](https://img.shields.io/badge/Grafana-10.0-orange?logo=grafana&style=for-the-badge)
-![Prometheus](https://img.shields.io/badge/Prometheus-2.45-e6522c?logo=prometheus&style=for-the-badge)
+![Grafana](https://img.shields.io/badge/Grafana-v12-orange?logo=grafana&style=for-the-badge)
+![Prometheus](https://img.shields.io/badge/Prometheus-v3-e6522c?logo=prometheus&style=for-the-badge)
 ![Cloudflare](https://img.shields.io/badge/Cloudflare-DNS%2FSSL-f38020?logo=cloudflare&style=for-the-badge)
 ![OracleCloud](https://img.shields.io/badge/Oracle_Cloud-Infrastructure-f80000?logo=oracle&style=for-the-badge)
 
@@ -23,6 +23,8 @@
 ## Live links
 
 ## [Swagger](https://retail.yusufakcay.dev) - [Grafana Dashboard](https://monitor.yusufakcay.dev) - [Mailpit](https://mailpit.yusufakcay.dev)
+
+## <a href="https://retail.yusufakcay.dev" target="_blank">Swagger</a> - <a href="https://monitor.yusufakcay.dev" target="_blank">Grafana Dashboard</a> - <a href="https://mailpit.yusufakcay.dev" target="_blank">Mailpit</a>
 
 </div>
 
