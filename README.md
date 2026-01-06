@@ -137,13 +137,79 @@ high-concurrency-retail-engine/
 │   ├── init-db.sql            # Database initialization
 │   ├── k6/                    # Load testing scripts
 │   └── observability/         # Grafana, Prometheus configs
-├── .github/
-│   └── workflows/             # CI/CD pipelines
 ├── docs/
 │   └── **/                    # readme assets
 ├── docker-compose.yml         # Development environment
 ├── docker-compose-prod.yml    # Production environment
+├── .github/
+│   └── workflows/             # CI/CD pipelines
+│       ├── ci.yml             # Main orchestrator
+│       ├── user-service-ci.yml
+│       ├── product-service-ci.yml
+│       ├── inventory-service-ci.yml
+│       ├── order-service-ci.yml
+│       ├── payment-service-ci.yml
+│       ├── gateway-service-ci.yml
+│       └── notification-service-ci.yml
 └── README.md
+```
+
+[↑ Back to Top](#high-concurrency-retail-engine)
+
+## CI/CD Pipeline
+
+![CI/CD Diagram](./docs/CI-CD%20Pipeline.png)
+
+**Intelligent Monorepo Testing & Deployment:**
+
+### 1. **Change Detection** (Optimized for Monorepo)
+
+```yaml
+Trigger: Push to main/develop or PR
+Action:
+  - Detect which services changed
+  - Only run CI for affected services
+```
+
+### 2. **Parallel Service CI** (Test + Build)
+
+Each service runs independently in parallel:
+
+```
+User Service          Product Service       Inventory Service     ...
+    ↓                      ↓                      ↓
+ ✅ Maven Test        ✅ Maven Test          ✅ Maven Test
+    ↓                      ↓                      ↓
+ Test Reports         Test Reports           Test Reports
+    ↓                      ↓                      ↓
+ Build JAR            Build JAR              Build JAR
+    ↓                      ↓                      ↓
+ Multi-Arch Docker    Multi-Arch Docker     Multi-Arch Docker
+ (amd64 + arm64)      (amd64 + arm64)       (amd64 + arm64)
+    ↓                      ↓                      ↓
+  Push to DockerHub   Push to DockerHub    Push to DockerHub
+```
+
+**Key Optimizations:**
+
+- **JVM Cache**: Maven dependency cache via GitHub Actions (speeds up builds by ~60%)
+- **Multi-Architecture Builds**: Automatic ARM64 & AMD64 image builds (OCI A1 Ampere ARM support)
+- **Fail Fast**: If any service test fails, deployment is blocked immediately
+
+### 3. **Conditional Deployment** (main branch only)
+
+```yaml
+Trigger: Successful tests on main branch
+Prerequisites:
+  - All service tests pass (or skip if unchanged)
+  - No test failures → blocks deployment
+
+Steps: 1. SCP infrastructure files to OCI
+  2. SSH into OCI server
+  3. Inject secrets via .env file (never in code)
+  4. Pull latest Docker images (from DockerHub)
+  5. docker compose up -d (rolling restart)
+  6. Automatic cleanup (--remove-orphans)
 ```
 
 [↑ Back to Top](#high-concurrency-retail-engine)
