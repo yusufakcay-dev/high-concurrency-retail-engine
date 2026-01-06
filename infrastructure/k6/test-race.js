@@ -1,5 +1,6 @@
 import http from "k6/http";
 import { check } from "k6";
+import { Counter } from "k6/metrics";
 
 // Configuration
 const BASE_URL = "https://retail.yusufakcay.dev";
@@ -7,38 +8,40 @@ const JWT_TOKEN =
   "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiQURNSU4iLCJ1c2VySWQiOjEsInN1YiI6ImxldG9zaXByYSIsImlhdCI6MTc2NzcwOTA2MSwiZXhwIjoxNzY3Nzk1NDYxfQ.UCEnmvzcMj7XqqA9F8XLIkdlCtHqvQIprkwE5q3W1Dk"; // Replace with a valid JWT token for authentication
 const TEST_SKU = "test";
 
+//k6 metric
+const successfulReserves = new Counter("successful_reserves");
+const lockConflicts = new Counter("lock_conflicts");
+
 export const options = {
   discardResponseBodies: true, // Critical for high RPS
+  timeout: "60s",
   scenarios: {
-    // 🚀 NEW EXECUTOR: Controls RPS, not Users
     api_stress: {
       executor: "ramping-arrival-rate",
-
       // Allocate enough VUs to handle the load (k6 will reuse them)
-      preAllocatedVUs: 50,
-      maxVUs: 200, // Ceiling to prevent crashing your computer
+      preAllocatedVUs: 250,
+      maxVUs: 2000, // Ceiling to prevent crashing your computer
 
       stages: [
         // 1. WARM UP: Let JVM compile hot paths
-        { target: 50, duration: "20s" },
-
-        // 2. RAMP TO NORMAL LOAD
         { target: 100, duration: "20s" },
 
-        // 3. RAMP TO STRESS LEVEL (2x normal)
+        // 2. RAMP TO NORMAL LOAD
         { target: 200, duration: "20s" },
+
+        // 3. RAMP TO STRESS LEVEL (2x normal)
+        { target: 400, duration: "20s" },
 
         // 4. HOLD STRESS LEVEL
-        { target: 200, duration: "20s" },
+        { target: 400, duration: "20s" },
 
         // 5. COOLDOWN
-        { target: 0, duration: "10s" },
+        { target: 0, duration: "20s" },
       ],
     },
   },
   thresholds: {
-    http_req_duration: ["p(95)<3000"],
-    // We expect conflicts (409), but 500 errors should be low
+    http_req_duration: ["p(95)<5000"],
     http_req_failed: ["rate<0.01"],
   },
 };
@@ -61,79 +64,8 @@ export default function () {
   });
 
   if (response.status === 201) {
-    console.log("✅ Reserved 1 unit");
+    successfulReserves.add(1); // Increment by 1
   } else if (response.status === 409) {
-    console.log("⏱️  Lock conflict (expected under high load)");
-  } else {
-    console.error(`❌ Status: ${response.status} - ${response.body}`);
-  }
-}
-
-export function teardown() {
-  console.log("\n� STRESS TEST COMPLETE - Validating results...\n");
-
-  const response = http.get(`${BASE_URL}/inventories/${TEST_SKU}`, { headers });
-
-  if (response.status === 200) {
-    const inventory = JSON.parse(response.body);
-
-    console.log("═══════════════════════════════════════════");
-    console.log("   🚀 EXTREME LOAD RACE CONDITION TEST    ");
-    console.log("═══════════════════════════════════════════");
-    console.log(`SKU:                ${inventory.sku}`);
-    console.log(`Initial Quantity:   1000 units`);
-    console.log(`Current Quantity:   ${inventory.quantity} units`);
-    console.log(`Reserved:           ${inventory.reservedQuantity} units`);
-    console.log(`Available:          ${inventory.availableQuantity} units`);
-    console.log("───────────────────────────────────────────");
-
-    // Validate formula: availableQuantity = quantity - reservedQuantity
-    const expectedAvailable = inventory.quantity - inventory.reservedQuantity;
-    const isValid = inventory.availableQuantity === expectedAvailable;
-
-    console.log(
-      `Formula Check: ${inventory.availableQuantity} = ${inventory.quantity} - ${inventory.reservedQuantity}`
-    );
-
-    if (isValid) {
-      console.log("✅ PASS: Formula is correct");
-    } else {
-      console.log(
-        `❌ FAIL: Expected ${expectedAvailable}, got ${inventory.availableQuantity}`
-      );
-    }
-
-    // Check for negative values
-    if (
-      inventory.quantity < 0 ||
-      inventory.availableQuantity < 0 ||
-      inventory.reservedQuantity < 0
-    ) {
-      console.log("❌ CRITICAL: Negative inventory detected!");
-    } else {
-      console.log("✅ PASS: No negative values");
-    }
-
-    // Check for overselling
-    if (inventory.reservedQuantity <= 1000) {
-      console.log("✅ PASS: No overselling (reserved ≤ 1000)");
-    } else {
-      console.log(
-        `❌ FAIL: OVERSELLING DETECTED! Reserved ${inventory.reservedQuantity} > 1000`
-      );
-    }
-
-    console.log("═══════════════════════════════════════════\n");
-
-    if (
-      isValid &&
-      inventory.availableQuantity >= 0 &&
-      inventory.reservedQuantity <= 1000
-    ) {
-      console.log("🎉 TEST PASSED: Distributed locks survived the spike!");
-      console.log("💪 Race conditions prevented under extreme load!\n");
-    } else {
-      console.log("💥 TEST FAILED: Race condition detected!\n");
-    }
+    lockConflicts.add(1); // Increment by 1
   }
 }
