@@ -34,10 +34,6 @@ public class Inventory {
     @Column(nullable = false)
     private Integer availableQuantity;
 
-    @Version
-    @Builder.Default
-    private Long version = 0L;
-
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
