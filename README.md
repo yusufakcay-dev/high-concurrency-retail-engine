@@ -24,8 +24,6 @@
 
 ## [Swagger](https://retail.yusufakcay.dev) - [Grafana Dashboard](https://monitor.yusufakcay.dev) - [Mailpit](https://mailpit.yusufakcay.dev)
 
-## <a href="https://retail.yusufakcay.dev" target="_blank">Swagger</a> - <a href="https://monitor.yusufakcay.dev" target="_blank">Grafana Dashboard</a> - <a href="https://mailpit.yusufakcay.dev" target="_blank">Mailpit</a>
-
 </div>
 
 ## Overview
