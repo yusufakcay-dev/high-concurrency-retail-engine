@@ -5,7 +5,7 @@ import { uuidv4 } from "https://jslib.k6.io/k6-utils/1.4.0/index.js";
 // Configuration
 const BASE_URL = "https://retail.yusufakcay.dev";
 const JWT_TOKEN =
-  "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiQURNSU4iLCJ1c2VySWQiOjEsInN1YiI6ImxldG9zaXByYSIsImlhdCI6MTc2NzcwOTA2MSwiZXhwIjoxNzY3Nzk1NDYxfQ.UCEnmvzcMj7XqqA9F8XLIkdlCtHqvQIprkwE5q3W1Dk";
+  "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiQURNSU4iLCJ1c2VySWQiOjEsInN1YiI6ImxldG9zaXByYSIsImlhdCI6MTc2NzczODQyNiwiZXhwIjoxNzY3ODI0ODI2fQ.C0kG0jj6Q2qrGilAq-loQEWGrzYL77zW2_7A7a_y0VY";
 const TEST_SKU = "test";
 
 export const options = {

@@ -24,6 +24,8 @@
 
 ## [Swagger](https://retail.yusufakcay.dev) - [Grafana Dashboard](https://monitor.yusufakcay.dev) - [Mailpit](https://mailpit.yusufakcay.dev)
 
+> **Environment:** Oracle Cloud (ARM Ampere A1 • 4 OCPUs • 24 GB RAM)
+
 </div>
 
 ## Overview
@@ -138,7 +140,7 @@ high-concurrency-retail-engine/
 ├── .github/
 │   └── workflows/             # CI/CD pipelines
 ├── docs/
-│   └── **/             # readme assets
+│   └── **/                    # readme assets
 ├── docker-compose.yml         # Development environment
 ├── docker-compose-prod.yml    # Production environment
 └── README.md
