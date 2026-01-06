@@ -72,6 +72,7 @@ public class InventoryService {
         return mapToResponse(inventory);
     }
 
+    @Transactional
     public InventoryResponse reserveInventory(String sku, Integer quantity) {
         if (sku == null || sku.isBlank()) {
             throw new IllegalArgumentException("SKU cannot be null or empty");
@@ -132,6 +133,7 @@ public class InventoryService {
         }
     }
 
+    @Transactional
     public InventoryResponse releaseReservedInventory(String sku, Integer quantity) {
         if (sku == null || sku.isBlank()) {
             throw new IllegalArgumentException("SKU cannot be null or empty");
@@ -191,6 +193,7 @@ public class InventoryService {
         }
     }
 
+    @Transactional
     public InventoryResponse confirmReservation(String sku, Integer quantity) {
         if (sku == null || sku.isBlank()) {
             throw new IllegalArgumentException("SKU cannot be null or empty");

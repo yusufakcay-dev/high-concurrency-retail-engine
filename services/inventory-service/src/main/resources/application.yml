@@ -37,6 +37,15 @@ server:
   port: ${SERVER_PORT:8083}
   servlet:
     context-path: /api
+  tomcat:
+    max-connections: 10000
+    threads:
+      max: 200
+      min-spare: 10
+    connection-timeout: 20000
+    accept-count: 100
+    # Handle client disconnects gracefully
+    max-keep-alive-requests: 100
 
 springdoc:
   api-docs:
