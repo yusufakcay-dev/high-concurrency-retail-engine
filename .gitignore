@@ -13,6 +13,7 @@ target/
 .env
 ### STS ###
 .apt_generated
+t.yml
 .classpath
 .factorypath
 .project
