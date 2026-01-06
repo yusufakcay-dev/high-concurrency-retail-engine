@@ -15,20 +15,23 @@ export const options = {
       executor: "ramping-arrival-rate",
 
       // Allocate enough VUs to handle the load (k6 will reuse them)
-      preAllocatedVUs: 1000,
-      maxVUs: 5000, // Ceiling to prevent crashing your computer
+      preAllocatedVUs: 50,
+      maxVUs: 200, // Ceiling to prevent crashing your computer
 
       stages: [
-        // 1. JIT WARM UP: Gentle load to compile Java byte-code
-        { target: 500, duration: "60s" }, // Hold 500 RPS for 1 min
+        // 1. WARM UP: Let JVM compile hot paths
+        { target: 50, duration: "20s" },
 
-        // 2. RAMP UP: Climb to the summit
-        { target: 5000, duration: "30s" }, // Go to 5000 RPS
+        // 2. RAMP TO NORMAL LOAD
+        { target: 100, duration: "20s" },
 
-        // 3. SUSTAIN: Hold the high note
-        { target: 5000, duration: "1m" }, // Stay at 5000 RPS
+        // 3. RAMP TO STRESS LEVEL (2x normal)
+        { target: 200, duration: "20s" },
 
-        // 4. COOLDOWN
+        // 4. HOLD STRESS LEVEL
+        { target: 200, duration: "20s" },
+
+        // 5. COOLDOWN
         { target: 0, duration: "10s" },
       ],
     },

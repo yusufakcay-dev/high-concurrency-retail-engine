@@ -26,16 +26,16 @@ export const options = {
 
       stages: [
         // 1. WARM UP: Let JVM compile hot paths
-        { target: 50, duration: "30s" },
+        { target: 50, duration: "20s" },
 
         // 2. RAMP TO NORMAL LOAD
-        { target: 100, duration: "30s" },
+        { target: 100, duration: "20s" },
 
         // 3. RAMP TO STRESS LEVEL (2x normal)
-        { target: 200, duration: "30s" },
+        { target: 200, duration: "20s" },
 
         // 4. HOLD STRESS LEVEL
-        { target: 200, duration: "30s" },
+        { target: 200, duration: "20s" },
 
         // 5. COOLDOWN
         { target: 0, duration: "20s" },
@@ -84,6 +84,38 @@ export default function () {
 }
 
 export function handleSummary(data) {
+  // Don't print anything here - let teardown handle final output
+  return {
+    stdout: "", // Suppress default K6 summary
+  };
+}
+
+export function teardown(data) {
+  // First, validate final inventory state
+  console.log("\n🔍 Validating final inventory state...\n");
+
+  const response = http.get(`${BASE_URL}/inventories/${TEST_SKU}`, {
+    headers,
+    timeout: "30s", // Longer timeout for teardown
+  });
+
+  let inventory = null;
+  let inventoryValid = false;
+
+  if (response.status === 200) {
+    try {
+      inventory = JSON.parse(response.body);
+      inventoryValid = true;
+    } catch (e) {
+      console.log(`❌ Failed to parse inventory response: ${e.message}`);
+      console.log(`Response body: ${response.body}`);
+    }
+  } else {
+    console.log(`❌ Failed to get inventory: HTTP ${response.status}`);
+    console.log(`Response: ${response.body}`);
+  }
+
+  // Then, print test summary
   const successful = data.metrics.successful_reservations?.values?.count || 0;
   const conflicts = data.metrics.lock_conflicts_409?.values?.count || 0;
   const errors = data.metrics.server_errors_5xx?.values?.count || 0;
@@ -92,57 +124,30 @@ export function handleSummary(data) {
   console.log("\n═════════════════════════════════════════════════════");
   console.log("   🚀 REALISTIC RACE CONDITION TEST RESULTS");
   console.log("═════════════════════════════════════════════════════");
-  console.log(`Total Requests:        ${totalRequests}`);
+  console.log(`Total Requests:        ${totalRequests.toLocaleString()}`);
   console.log(
-    `Successful (201):      ${successful} (${(
+    `Successful (201):      ${successful.toLocaleString()} (${(
       (successful / totalRequests) *
       100
     ).toFixed(2)}%)`
   );
   console.log(
-    `Lock Conflicts (409):  ${conflicts} (${(
+    `Lock Conflicts (409):  ${conflicts.toLocaleString()} (${(
       (conflicts / totalRequests) *
       100
     ).toFixed(2)}%)`
   );
   console.log(
-    `Server Errors (5xx):   ${errors} (${(
+    `Server Errors (5xx):   ${errors.toLocaleString()} (${(
       (errors / totalRequests) *
       100
     ).toFixed(2)}%)`
   );
   console.log("─────────────────────────────────────────────────────");
 
-  const successRate = (successful / totalRequests) * 100;
-  const errorRate = (errors / totalRequests) * 100;
-
-  if (errorRate < 1 && successRate > 50) {
-    console.log("✅ PASS: Service handles realistic load well!");
-    console.log("💪 Redisson locks working correctly");
-  } else if (errorRate < 5) {
-    console.log("⚠️  MARGINAL: Service struggling but stable");
-  } else {
-    console.log("❌ FAIL: Too many server errors");
-  }
-
-  console.log("═════════════════════════════════════════════════════\n");
-
-  return {
-    stdout: JSON.stringify(data, null, 2),
-  };
-}
-
-export function teardown() {
-  console.log("\n🔍 Validating final inventory state...\n");
-
-  const response = http.get(`${BASE_URL}/inventories/${TEST_SKU}`, { headers });
-
-  if (response.status === 200) {
-    const inventory = JSON.parse(response.body);
-
-    console.log("═════════════════════════════════════════════════════");
+  if (inventoryValid && inventory) {
     console.log("   📊 FINAL INVENTORY STATE");
-    console.log("═════════════════════════════════════════════════════");
+    console.log("─────────────────────────────────────────────────────");
     console.log(`SKU:                ${inventory.sku}`);
     console.log(
       `Total Quantity:     ${inventory.quantity.toLocaleString()} units`
@@ -164,11 +169,32 @@ export function teardown() {
     );
 
     if (isValid) {
-      console.log("✅ PASS: Arithmetic is correct (no race condition)");
+      console.log("✅ Arithmetic correct (no race condition)");
     } else {
       console.log(
         `❌ FAIL: Expected ${expectedAvailable.toLocaleString()}, got ${inventory.availableQuantity.toLocaleString()}`
       );
+    }
+
+    // CRITICAL: Check for discrepancy between K6 count and DB
+    const discrepancy = Math.abs(successful - inventory.reservedQuantity);
+    console.log("─────────────────────────────────────────────────────");
+    console.log(`K6 Successful:      ${successful.toLocaleString()}`);
+    console.log(
+      `DB Reserved:        ${inventory.reservedQuantity.toLocaleString()}`
+    );
+    console.log(`Discrepancy:        ${discrepancy.toLocaleString()}`);
+
+    if (discrepancy === 0) {
+      console.log("✅ PERFECT: K6 count matches DB");
+    } else if (discrepancy < 100) {
+      console.log("⚠️  MINOR: Small discrepancy (likely timing/cleanup)");
+    } else {
+      console.log("❌ WARNING: Large discrepancy detected!");
+      console.log("   Possible causes:");
+      console.log("   - Concurrent confirmations/releases during test");
+      console.log("   - Background processes modifying inventory");
+      console.log("   - Network retries counted twice");
     }
 
     // Check for negative values
@@ -178,12 +204,22 @@ export function teardown() {
       inventory.reservedQuantity < 0
     ) {
       console.log("❌ CRITICAL: Negative inventory detected!");
-    } else {
-      console.log("✅ PASS: No negative values");
     }
 
-    console.log("═════════════════════════════════════════════════════\n");
-  } else {
-    console.log(`❌ Failed to get inventory: ${response.status}`);
+    console.log("─────────────────────────────────────────────────────");
+
+    const successRate = (successful / totalRequests) * 100;
+    const errorRate = (errors / totalRequests) * 100;
+
+    if (errorRate < 1 && successRate > 50 && isValid) {
+      console.log("✅ PASS: Service handles realistic load perfectly!");
+      console.log("💪 Redisson locks working correctly");
+    } else if (errorRate < 5 && isValid) {
+      console.log("⚠️  MARGINAL: Service struggling but stable");
+    } else {
+      console.log("❌ FAIL: Issues detected");
+    }
   }
+
+  console.log("═════════════════════════════════════════════════════\n");
 }

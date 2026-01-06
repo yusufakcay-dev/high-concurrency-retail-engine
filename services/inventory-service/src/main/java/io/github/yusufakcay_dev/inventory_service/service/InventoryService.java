@@ -72,7 +72,6 @@ public class InventoryService {
         return mapToResponse(inventory);
     }
 
-    @Transactional
     public InventoryResponse reserveInventory(String sku, Integer quantity) {
         if (sku == null || sku.isBlank()) {
             throw new IllegalArgumentException("SKU cannot be null or empty");
