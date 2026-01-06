@@ -30,10 +30,10 @@ export const options = {
         { target: 200, duration: "20s" },
 
         // 3. RAMP TO STRESS LEVEL (2x normal)
-        { target: 400, duration: "20s" },
+        { target: 350, duration: "20s" },
 
         // 4. HOLD STRESS LEVEL
-        { target: 400, duration: "20s" },
+        { target: 350, duration: "20s" },
 
         // 5. COOLDOWN
         { target: 0, duration: "20s" },
