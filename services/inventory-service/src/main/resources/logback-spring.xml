@@ -18,11 +18,15 @@
     </appender>
 
     <root level="INFO">
-        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="CONSOLE" />
     </root>
-    
+
     <!-- Reduce noise from framework loggers -->
-    <logger name="org.springframework" level="WARN"/>
-    <logger name="org.hibernate" level="WARN"/>
-    <logger name="io.netty" level="WARN"/>
+    <logger name="org.springframework" level="WARN" />
+    <logger name="org.hibernate" level="WARN" />
+    <logger name="io.netty" level="WARN" />
+
+    <!-- Suppress client disconnect noise (broken pipe is expected under load) -->
+    <logger name="org.apache.catalina.connector.CoyoteAdapter" level="ERROR" />
+    <logger name="org.springframework.web.context.request.async" level="ERROR" />
 </configuration>

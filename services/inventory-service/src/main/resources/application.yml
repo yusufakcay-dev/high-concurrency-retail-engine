@@ -38,14 +38,15 @@ server:
   servlet:
     context-path: /api
   tomcat:
-    max-connections: 10000
+    # Connection pool sizing for 4 CPU server
+    max-connections: 8192 # Max concurrent connections (2K per CPU)
     threads:
-      max: 200
-      min-spare: 10
-    connection-timeout: 20000
-    accept-count: 100
-    # Handle client disconnects gracefully
-    max-keep-alive-requests: 100
+      max: 200 # Worker threads (50 per CPU)
+      min-spare: 20 # Always ready threads
+    connection-timeout: 10000 # 10s - fail faster under load
+    accept-count: 200 # Queue for incoming connections
+    max-keep-alive-requests: 100 # HTTP keep-alive
+    keep-alive-timeout: 30000 # 30s keep-alive timeout
 
 springdoc:
   api-docs:
