@@ -43,7 +43,7 @@ public class EmailService {
             mailSender.send(message);
 
             log.info("✓ HTML Email sent successfully to Mailpit!");
-            log.info("🌐 View email at: http://localhost:8025");
+            log.info("🌐 View email at: https://mailpit.yusufakcay.dev");
             log.info("========================================");
         } catch (MessagingException e) {
             log.error("✗ Failed to send email via Mailpit", e);

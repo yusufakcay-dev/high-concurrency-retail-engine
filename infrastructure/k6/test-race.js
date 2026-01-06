@@ -4,7 +4,7 @@ import { check } from "k6";
 // Configuration
 const BASE_URL = "https://retail.yusufakcay.dev";
 const JWT_TOKEN =
-  "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiQURNSU4iLCJ1c2VySWQiOjEsInN1YiI6ImxldG9zaXByYSIsImlhdCI6MTc2NzU3ODM4OSwiZXhwIjoxNzY3NjY0Nzg5fQ.hdzoup6Y6AEFBqkOztYvuRtnt3G1jZ7dxD5hT6wLSuY"; // Replace with a valid JWT token for authentication
+  "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiQURNSU4iLCJ1c2VySWQiOjEsInN1YiI6ImxldG9zaXByYSIsImlhdCI6MTc2NzcwOTA2MSwiZXhwIjoxNzY3Nzk1NDYxfQ.UCEnmvzcMj7XqqA9F8XLIkdlCtHqvQIprkwE5q3W1Dk"; // Replace with a valid JWT token for authentication
 const TEST_SKU = "test";
 
 export const options = {

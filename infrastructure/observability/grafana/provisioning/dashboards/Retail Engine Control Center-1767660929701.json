@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 1,
+  "id": 0,
   "links": [],
   "panels": [
     {
@@ -76,7 +76,9 @@
         "orientation": "auto",
         "percentChangeColorMode": "standard",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "values": false
         },
@@ -168,7 +170,10 @@
       "id": 2,
       "options": {
         "legend": {
-          "calcs": ["mean", "max"],
+          "calcs": [
+            "mean",
+            "max"
+          ],
           "displayMode": "table",
           "placement": "bottom",
           "showLegend": true
@@ -339,7 +344,9 @@
         "minVizWidth": 75,
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": ["mean"],
+          "calcs": [
+            "mean"
+          ],
           "fields": "",
           "values": false
         },
@@ -432,7 +439,7 @@
       },
       "id": 21,
       "panels": [],
-      "title": "INFRASTRUCTURE HEALTH METRICS",
+      "title": "INFRASTRUCTURE HEALTH",
       "type": "row"
     },
     {
@@ -637,13 +644,19 @@
   "preload": false,
   "refresh": "5s",
   "schemaVersion": 42,
-  "tags": ["spring-boot", "retail-engine", "metrics"],
+  "tags": [
+    "spring-boot",
+    "retail-engine",
+    "metrics"
+  ],
   "templating": {
     "list": [
       {
         "current": {
           "text": "All",
-          "value": "$__all"
+          "value": [
+            "$__all"
+          ]
         },
         "datasource": {
           "type": "prometheus",
@@ -675,5 +688,5 @@
   "timezone": "",
   "title": "Retail Engine Control Center",
   "uid": "retail-engine-v1",
-  "version": 2
+  "version": 8
 }
