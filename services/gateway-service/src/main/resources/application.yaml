@@ -71,12 +71,6 @@ spring:
               uri: http://user-service:8082
               predicates:
                 - Path=/auth/**
-              filters:
-                - name: RequestRateLimiter
-                  args:
-                    redis-rate-limiter.replenishRate: 10
-                    redis-rate-limiter.burstCapacity: 20
-                    key-resolver: "#{@userKeyResolver}"
 
             # Products - Public READ access (GET only, no authentication)
             - id: product-service-read
@@ -84,12 +78,6 @@ spring:
               predicates:
                 - Path=/products/**
                 - Method=GET
-              filters:
-                - name: RequestRateLimiter
-                  args:
-                    redis-rate-limiter.replenishRate: 50
-                    redis-rate-limiter.burstCapacity: 100
-                    key-resolver: "#{@userKeyResolver}"
 
             # Products - ADMIN-only WRITE (POST/PUT/DELETE require authentication)
             - id: product-service-write
@@ -99,11 +87,6 @@ spring:
                 - Method=POST,PUT,DELETE
               filters:
                 - AuthenticationFilter
-                - name: RequestRateLimiter
-                  args:
-                    redis-rate-limiter.replenishRate: 50
-                    redis-rate-limiter.burstCapacity: 100
-                    key-resolver: "#{@userKeyResolver}"
 
             # ==================== AUTHENTICATED ROUTES ====================
 
@@ -114,11 +97,6 @@ spring:
                 - Path=/user/**
               filters:
                 - AuthenticationFilter
-                - name: RequestRateLimiter
-                  args:
-                    redis-rate-limiter.replenishRate: 20
-                    redis-rate-limiter.burstCapacity: 40
-                    key-resolver: "#{@userKeyResolver}"
 
             # Inventory - ADMIN only (all operations)
             - id: inventory-service
@@ -128,11 +106,6 @@ spring:
               filters:
                 - AuthenticationFilter
                 - RewritePath=/inventories/(?<segment>.*), /api/inventories/$\{segment}
-                - name: RequestRateLimiter
-                  args:
-                    redis-rate-limiter.replenishRate: 20
-                    redis-rate-limiter.burstCapacity: 40
-                    key-resolver: "#{@userKeyResolver}"
 
             # Orders - Authenticated users
             - id: order-service
@@ -141,11 +114,6 @@ spring:
                 - Path=/api/orders/**
               filters:
                 - AuthenticationFilter
-                - name: RequestRateLimiter
-                  args:
-                    redis-rate-limiter.replenishRate: 10
-                    redis-rate-limiter.burstCapacity: 20
-                    key-resolver: "#{@userKeyResolver}"
 
 springdoc:
   swagger-ui:

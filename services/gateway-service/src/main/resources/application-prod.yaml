@@ -1,0 +1,90 @@
+spring:
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            # Override routes with rate limiting for production
+
+            # Authentication endpoints (login, register)
+            - id: user-service-auth
+              uri: http://user-service:8082
+              predicates:
+                - Path=/auth/**
+              filters:
+                - name: RequestRateLimiter
+                  args:
+                    redis-rate-limiter.replenishRate: 10
+                    redis-rate-limiter.burstCapacity: 20
+                    key-resolver: "#{@userKeyResolver}"
+
+            # Products - Public READ access (GET only, no authentication)
+            - id: product-service-read
+              uri: http://product-service:8081
+              predicates:
+                - Path=/products/**
+                - Method=GET
+              filters:
+                - name: RequestRateLimiter
+                  args:
+                    redis-rate-limiter.replenishRate: 50
+                    redis-rate-limiter.burstCapacity: 100
+                    key-resolver: "#{@userKeyResolver}"
+
+            # Products - ADMIN-only WRITE (POST/PUT/DELETE require authentication)
+            - id: product-service-write
+              uri: http://product-service:8081
+              predicates:
+                - Path=/products/**
+                - Method=POST,PUT,DELETE
+              filters:
+                - AuthenticationFilter
+                - name: RequestRateLimiter
+                  args:
+                    redis-rate-limiter.replenishRate: 50
+                    redis-rate-limiter.burstCapacity: 100
+                    key-resolver: "#{@userKeyResolver}"
+
+            # User profile endpoints
+            - id: user-service-me
+              uri: http://user-service:8082
+              predicates:
+                - Path=/user/**
+              filters:
+                - AuthenticationFilter
+                - name: RequestRateLimiter
+                  args:
+                    redis-rate-limiter.replenishRate: 20
+                    redis-rate-limiter.burstCapacity: 40
+                    key-resolver: "#{@userKeyResolver}"
+
+            # Inventory - ADMIN only (all operations)
+            - id: inventory-service
+              uri: http://inventory-service:8083
+              predicates:
+                - Path=/inventories/**
+              filters:
+                - AuthenticationFilter
+                - RewritePath=/inventories/(?<segment>.*), /api/inventories/$\{segment}
+                - name: RequestRateLimiter
+                  args:
+                    redis-rate-limiter.replenishRate: 100
+                    redis-rate-limiter.burstCapacity: 200
+                    key-resolver: "#{@userKeyResolver}"
+
+            # Orders - Authenticated users
+            - id: order-service
+              uri: http://order-service:8084
+              predicates:
+                - Path=/api/orders/**
+              filters:
+                - AuthenticationFilter
+                - name: RequestRateLimiter
+                  args:
+                    redis-rate-limiter.replenishRate: 10
+                    redis-rate-limiter.burstCapacity: 20
+                    key-resolver: "#{@userKeyResolver}"
+
+application:
+  rate-limiter:
+    enabled: true
