@@ -95,7 +95,21 @@ spring:
               uri: http://product-service:8081
               predicates:
                 - Path=/ai/**
+                - Method=GET
               filters:
+                - name: RequestRateLimiter
+                  args:
+                    redis-rate-limiter.replenishRate: 50
+                    redis-rate-limiter.burstCapacity: 100
+                    key-resolver: "#{@userKeyResolver}"
+
+            - id: product-service-ai-write
+              uri: http://product-service:8081
+              predicates:
+                - Path=/ai/**
+                - Method=POST, PUT, DELETE
+              filters:
+                - AuthenticationFilter
                 - name: RequestRateLimiter
                   args:
                     redis-rate-limiter.replenishRate: 50

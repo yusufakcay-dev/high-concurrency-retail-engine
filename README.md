@@ -5,6 +5,9 @@
 ![Java](https://img.shields.io/badge/Java-17-orange?style=for-the-badge&logo=openjdk)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5-green?style=for-the-badge&logo=springboot)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue?style=for-the-badge&logo=postgresql)
+![Spring AI](https://img.shields.io/badge/Spring_AI-1-6db33f?style=for-the-badge&logo=spring&logoColor=white)
+![pgvector](https://img.shields.io/badge/pgvector-Enabled-336791?style=for-the-badge&logo=postgresql&logoColor=white)
+![Testcontainers](https://img.shields.io/badge/Testcontainers-TEST-9a25c0?style=for-the-badge&logo=testcontainers&logoColor=white)
 ![Redis](https://img.shields.io/badge/Redis-7-red?style=for-the-badge&logo=redis)
 ![Kafka](https://img.shields.io/badge/Apache%20Kafka-7.4-black?style=for-the-badge&logo=apachekafka)
 ![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=for-the-badge&logo=docker)
@@ -18,7 +21,7 @@
 
 [Architecture](#architecture) • [K6 test-user-journey](#k6-test-user-journey) • [Distributed Lock](#distributed-lock)
 
-[Saga Pattern](#saga-pattern) • [Test Coverage by Service](#test-coverage-by-service) • [Project Structure](#project-structure)
+[Saga Pattern](#saga-pattern) • [Test Coverage by Service](#test-coverage-by-service) • [CI/CD Pipeline](#cicd-pipeline) • [Project Structure](#project-structure)
 
 ## Live links
 
@@ -122,41 +125,6 @@ Reliability: Implemented Idempotent Consumers to handle potential network retrie
 
 [↑ Back to Top](#high-concurrency-retail-engine)
 
-## Project Structure
-
-```
-high-concurrency-retail-engine/
-├── services/
-│   ├── gateway-service/        # API Gateway
-│   ├── user-service/           # Authentication
-│   ├── product-service/        # Product catalog
-│   ├── inventory-service/      # Stock management
-│   ├── order-service/          # Order processing
-│   ├── payment-service/        # Stripe integration
-│   └── notification-service/   # Email notifications
-├── infrastructure/
-│   ├── init-db.sql            # Database initialization
-│   ├── k6/                    # Load testing scripts
-│   └── observability/         # Grafana, Prometheus configs
-├── docs/
-│   └── **/                    # readme assets
-├── docker-compose.yml         # Development environment
-├── docker-compose-prod.yml    # Production environment
-├── .github/
-│   └── workflows/             # CI/CD pipelines
-│       ├── ci.yml             # Main orchestrator
-│       ├── user-service-ci.yml
-│       ├── product-service-ci.yml
-│       ├── inventory-service-ci.yml
-│       ├── order-service-ci.yml
-│       ├── payment-service-ci.yml
-│       ├── gateway-service-ci.yml
-│       └── notification-service-ci.yml
-└── README.md
-```
-
-[↑ Back to Top](#high-concurrency-retail-engine)
-
 ## CI/CD Pipeline
 
 ![CI/CD Diagram](./docs/CI-CD%20Pipeline.png)
@@ -211,6 +179,41 @@ Steps: 1. SCP infrastructure files to OCI
   4. Pull latest Docker images (from DockerHub)
   5. docker compose up -d (rolling restart)
   6. Automatic cleanup (--remove-orphans)
+```
+
+[↑ Back to Top](#high-concurrency-retail-engine)
+
+## Project Structure
+
+```
+high-concurrency-retail-engine/
+├── services/
+│   ├── gateway-service/        # API Gateway
+│   ├── user-service/           # Authentication
+│   ├── product-service/        # Product catalog
+│   ├── inventory-service/      # Stock management
+│   ├── order-service/          # Order processing
+│   ├── payment-service/        # Stripe integration
+│   └── notification-service/   # Email notifications
+├── infrastructure/
+│   ├── init-db.sql            # Database initialization
+│   ├── k6/                    # Load testing scripts
+│   └── observability/         # Grafana, Prometheus configs
+├── docs/
+│   └── **/                    # readme assets
+├── docker-compose.yml         # Development environment
+├── docker-compose-prod.yml    # Production environment
+├── .github/
+│   └── workflows/             # CI/CD pipelines
+│       ├── ci.yml             # Main orchestrator
+│       ├── user-service-ci.yml
+│       ├── product-service-ci.yml
+│       ├── inventory-service-ci.yml
+│       ├── order-service-ci.yml
+│       ├── payment-service-ci.yml
+│       ├── gateway-service-ci.yml
+│       └── notification-service-ci.yml
+└── README.md
 ```
 
 [↑ Back to Top](#high-concurrency-retail-engine)

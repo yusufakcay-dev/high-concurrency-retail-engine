@@ -54,6 +54,15 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
                     }
                 }
 
+                // Enforce ADMIN role for POST to ai at gateway level
+                if (exchange.getRequest().getMethod() == HttpMethod.POST
+                        && exchange.getRequest().getURI().getPath().startsWith("/ai")) {
+                    if (role == null || !role.equals("ADMIN")) {
+                        log.warn("Forbidden: Non-admin user {} attempted POST to ai", username);
+                        return onError(exchange, "Access Denied: Admin only", HttpStatus.FORBIDDEN);
+                    }
+                }
+
                 // Enforce ADMIN role for ALL operations on inventories at gateway level
                 if (exchange.getRequest().getURI().getPath().startsWith("/inventories")) {
                     if (role == null || !role.equals("ADMIN")) {
