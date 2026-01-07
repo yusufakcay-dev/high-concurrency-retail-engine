@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -32,22 +33,31 @@ public class AiSearchService {
 
         List<Product> products = productRepository.findAll();
 
-        // 1. Convert Products to AI "Documents"
+        // 1. Calculate the UUIDs for these products
+        List<String> vectorIdsToDelete = products.stream()
+                .map(p -> UUID.nameUUIDFromBytes(("product-" + p.getId()).getBytes()).toString())
+                .toList();
+
+        // 2. Clear existing entries in Vector DB using valid UUIDs
+        if (!vectorIdsToDelete.isEmpty()) {
+            vectorStore.delete(vectorIdsToDelete);
+        }
+
+        // 3. Convert Products to AI "Documents" with specific IDs
         List<Document> documents = products.stream()
                 .map(product -> {
-                    // We combine name + description for the AI to "read"
                     String content = "Product: " + product.getName() + ". Description: " + product.getDescription();
-
                     Map<String, Object> metadata = Map.of("productId", product.getId());
 
-                    return new Document(content, metadata);
+                    // Generate the SAME deterministic UUID
+                    String documentId = UUID.nameUUIDFromBytes(("product-" + product.getId()).getBytes()).toString();
+
+                    // Use the constructor that accepts 'id'
+                    return new Document(documentId, content, metadata);
                 })
                 .toList();
 
-        // 2. Clear existing entries in Vector DB
-        vectorStore.delete(products.stream().map(p -> p.getId().toString()).toList());
-
-        // 3. Save to Vector DB (This generates embeddings automatically via ONNX)
+        // 4. Save to Vector DB
         vectorStore.add(documents);
 
         log.info("Indexed {} products into Vector Store.", documents.size());
