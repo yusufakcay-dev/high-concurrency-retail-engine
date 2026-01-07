@@ -70,7 +70,7 @@ public class AiSearchService {
         // 1. Ask Vector Store to find similar documents
         // topK=5 means return top 5 matches
         List<Document> similarDocuments = vectorStore.similaritySearch(
-                SearchRequest.builder().query(query).topK(5).similarityThreshold(0.5).build());
+                SearchRequest.builder().query(query).topK(5).similarityThreshold(0.3).build());
 
         // 2. Extract Product IDs from the metadata
         List<Long> productIds = similarDocuments.stream()

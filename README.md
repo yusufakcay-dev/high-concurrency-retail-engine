@@ -32,19 +32,20 @@
 
 This project is a **high-concurrency e-commerce platform** designed to handle thousands of simultaneous orders without data inconsistencies like overselling. It demonstrates real-world distributed systems patterns including:
 
+- **AI-Powered Semantic Search** - Implemented a vector search engine using Spring AI and pgvector, enabling conceptual product discovery (e.g., "thirsty" finding "Coke") beyond simple keyword matching.
 - **Observability** - OpenTelemetry tracing, Prometheus metrics, Grafana dashboards, Loki logging, and Tempo for distributed tracing.
-- **Distributed Locking** - Redisson for preventing concurrent inventory modifications
-- **Event-Driven Architecture** - Asynchronous communication via Apache Kafka across all services
-- **Saga Pattern** - Distributed transaction management for order fulfillment
-- **Idempotency** - Ensuring exactly-once processing for critical operations
-- **Real Payment Integration** - Production-ready Stripe integration with webhooks
-- **Circuit breaker** - Resilience4j integration for fault-tolerant calls to inventory/payment services
-- **Kafka DLQ** - Dead letter queues for handling failed message processing (e.g., notification retries)
-- **Fallback Handling** - Graceful degradation when services are unavailable
-- **Testing Strategy** - 120+ tests covering unit, integration (Testcontainers), and load testing with k6
-- **Scheduler** - Background job for expiring unpaid orders
-- **Rate Limiting** - Configurable per-route limits using Redis
-- **API Gateway & Routing** - Centralized entry point for all microservices, with path-based routing
+- **Distributed Locking** - Redisson for preventing concurrent inventory modifications.
+- **Event-Driven Architecture** - Asynchronous communication via Apache Kafka across all services.
+- **Saga Pattern** - Distributed transaction management for order fulfillment.
+- **Idempotency** - Ensuring exactly-once processing for critical operations.
+- **Real Payment Integration** - Production-ready Stripe integration with webhooks.
+- **Circuit breaker** - Resilience4j integration for fault-tolerant calls to inventory/payment services.
+- **Kafka DLQ** - Dead letter queues for handling failed message processing (e.g., notification retries).
+- **Fallback Handling** - Graceful degradation when services are unavailable.
+- **Testing Strategy** - 120+ tests covering unit, integration (Testcontainers), and load testing with k6.
+- **Scheduler** - Background job for expiring unpaid orders.
+- **Rate Limiting** - Configurable per-route limits using Redis.
+- **API Gateway & Routing** - Centralized entry point for all microservices, with path-based routing.
 - **API Documentation** - Live OpenAPI (Swagger) specification.
 
 ## Architecture
