@@ -16,6 +16,12 @@ spring:
     properties:
       hibernate:
         "[format_sql]": true
+  ai:
+    vectorstore:
+      pgvector:
+        index-type: HNSW
+        dimension: 384
+        initialize-schema: true
 
   # Redis Cache Configuration
   data:
