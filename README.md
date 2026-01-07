@@ -25,7 +25,7 @@
 
 ## Live links
 
-## [Swagger](https://retail.yusufakcay.dev) - [Grafana Dashboard](https://monitor.yusufakcay.dev) - [Mailpit](https://mailpit.yusufakcay.dev)
+## [Swagger](https://retail.yusufakcay.dev) • [Grafana Dashboard](https://monitor.yusufakcay.dev) • [Mailpit](https://mailpit.yusufakcay.dev)
 
 > **Environment:** Oracle Cloud (ARM Ampere A1 • 4 OCPUs • 24 GB RAM)
 
