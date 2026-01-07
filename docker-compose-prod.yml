@@ -3,6 +3,7 @@ services:
   postgres:
     image: pgvector/pgvector:pg15
     container_name: retail-engine-db
+    restart: always
     environment:
       POSTGRES_DB: default_db
       POSTGRES_USER: admin
@@ -21,6 +22,7 @@ services:
   user-service:
     image: ${DOCKER_USERNAME}/user-service:latest
     container_name: user-service
+    restart: always
     depends_on:
       postgres:
         condition: service_healthy
@@ -50,6 +52,7 @@ services:
   product-service:
     image: ${DOCKER_USERNAME}/product-service:latest
     container_name: product-service
+    restart: always
     depends_on:
       postgres:
         condition: service_healthy
@@ -86,6 +89,7 @@ services:
   inventory-service:
     image: ${DOCKER_USERNAME}/inventory-service:latest
     container_name: inventory-service
+    restart: always
     depends_on:
       postgres:
         condition: service_healthy
@@ -122,6 +126,7 @@ services:
   order-service:
     image: ${DOCKER_USERNAME}/order-service:latest
     container_name: order-service
+    restart: always
     depends_on:
       postgres:
         condition: service_healthy
@@ -164,6 +169,7 @@ services:
   payment-service:
     image: ${DOCKER_USERNAME}/payment-service:latest
     container_name: payment-service
+    restart: always
     depends_on:
       postgres:
         condition: service_healthy
@@ -199,6 +205,7 @@ services:
   notification-service:
     image: ${DOCKER_USERNAME}/notification-service:latest
     container_name: notification-service
+    restart: always
     depends_on:
       kafka:
         condition: service_healthy
@@ -230,6 +237,7 @@ services:
   gateway-service:
     image: ${DOCKER_USERNAME}/gateway-service:latest
     container_name: gateway-service
+    restart: always
     depends_on:
       user-service:
         condition: service_healthy
@@ -267,6 +275,7 @@ services:
   zookeeper:
     image: confluentinc/cp-zookeeper:7.4.0
     container_name: zookeeper
+    restart: always
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
@@ -283,6 +292,7 @@ services:
   kafka:
     image: confluentinc/cp-kafka:7.4.0
     container_name: kafka
+    restart: always
     depends_on:
       zookeeper:
         condition: service_healthy
@@ -308,6 +318,7 @@ services:
   redis:
     image: redis:7-alpine
     container_name: retail-engine-redis
+    restart: always
     command: redis-server --appendonly yes
     volumes:
       - redis_data:/data
@@ -321,16 +332,17 @@ services:
   mailpit:
     image: axllent/mailpit:latest
     container_name: mailpit
+    restart: unless-stopped
     ports:
       - "1025:1025"
       - "8025:8025"
     networks: [backend]
-    restart: unless-stopped
 
   # --- OBSERVABILITY STACK ---
   grafana:
     image: grafana/grafana:latest
     container_name: grafana
+    restart: unless-stopped
     ports: ["3000:3000"]
     volumes:
       - ./infrastructure/observability/grafana/provisioning/datasources/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
@@ -341,11 +353,11 @@ services:
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
     networks: [backend]
-    restart: unless-stopped
 
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
+    restart: unless-stopped
     ports: ["9090:9090"]
     volumes:
       - ./infrastructure/observability/prometheus.yaml:/etc/prometheus/prometheus.yml
@@ -355,29 +367,28 @@ services:
       - "--storage.tsdb.path=/prometheus"
       - "--storage.tsdb.retention.time=7d"
     networks: [backend]
-    restart: unless-stopped
 
   tempo:
     image: grafana/tempo:latest
     container_name: tempo
+    restart: unless-stopped
     ports: ["3200:3200", "4318:4318"]
     volumes:
       - ./infrastructure/observability/tempo.yaml:/etc/tempo.yaml
       - tempo_data:/tmp/tempo
     command: ["-config.file=/etc/tempo.yaml"]
     networks: [backend]
-    restart: unless-stopped
 
   loki:
     image: grafana/loki:latest
     container_name: loki
+    restart: unless-stopped
     ports: ["3100:3100"]
     volumes:
       - ./infrastructure/observability/loki.yaml:/etc/loki/local-config.yaml
       - loki_data:/tmp/loki
     command: -config.file=/etc/loki/local-config.yaml
     networks: [backend]
-    restart: unless-stopped
     deploy:
       resources:
         limits:
@@ -387,6 +398,7 @@ services:
   promtail:
     image: grafana/promtail:latest
     container_name: promtail
+    restart: unless-stopped
     volumes:
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - ./infrastructure/observability/promtail.yaml:/etc/promtail/config.yml
@@ -394,7 +406,6 @@ services:
     command: -config.file=/etc/promtail/config.yml
     networks: [backend]
     depends_on: [loki]
-    restart: unless-stopped
 
 networks:
   backend:

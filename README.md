@@ -63,6 +63,8 @@ This project is a **high-concurrency e-commerce platform** designed to handle th
 
 ```yaml
 Routes:
+  /ai/search    → Semantic search (Public)
+  /ai/index     → Generates embeddings for all products (Admin)
   /auth/**      → Login/Register (Public)
   /users/**     → User Service (Authenticated)
   /products/**  → Product Service (Public: GET, Admin: POST/PUT/DELETE)
