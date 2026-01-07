@@ -91,6 +91,17 @@ spring:
                     redis-rate-limiter.burstCapacity: 100
                     key-resolver: "#{@userKeyResolver}"
 
+            - id: product-service-ai
+              uri: http://product-service:8081
+              predicates:
+                - Path=/ai/**
+              filters:
+                - name: RequestRateLimiter
+                  args:
+                    redis-rate-limiter.replenishRate: 50
+                    redis-rate-limiter.burstCapacity: 100
+                    key-resolver: "#{@userKeyResolver}"
+
             # Products - ADMIN-only WRITE (POST/PUT/DELETE require authentication)
             - id: product-service-write
               uri: http://product-service:8081
