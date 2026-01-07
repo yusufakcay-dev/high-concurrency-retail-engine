@@ -46,6 +46,7 @@ This project is a **high-concurrency e-commerce platform** designed to handle th
 - **Kafka DLQ** - Dead letter queues for handling failed message processing (e.g., notification retries).
 - **Fallback Handling** - Graceful degradation when services are unavailable.
 - **Testing Strategy** - 120+ tests covering unit, integration (Testcontainers), and load testing with k6.
+- **Server-Side Pagination** - Implemented efficient data fetching for the product catalog to ensure consistent performance as the database scales.
 - **Scheduler** - Background job for expiring unpaid orders.
 - **Rate Limiting** - Configurable per-route limits using Redis.
 - **API Gateway & Routing** - Centralized entry point for all microservices, with path-based routing.
