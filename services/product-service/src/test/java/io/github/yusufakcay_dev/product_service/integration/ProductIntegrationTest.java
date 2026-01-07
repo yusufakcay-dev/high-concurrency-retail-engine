@@ -59,7 +59,7 @@ class ProductIntegrationTest {
 
     @SuppressWarnings("resource")
     @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15-alpine")
+    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("pgvector/pgvector:pg15")
             .withDatabaseName("productdb")
             .withUsername("test")
             .withPassword("test");
@@ -70,7 +70,7 @@ class ProductIntegrationTest {
 
     @SuppressWarnings("resource")
     @Container
-    static GenericContainer<?> redis = new GenericContainer<>(DockerImageName.parse("redis:7-alpine"))
+    static GenericContainer<?> redis = new GenericContainer<>(DockerImageName.parse("redis:7"))
             .withExposedPorts(6379);
 
     @DynamicPropertySource
