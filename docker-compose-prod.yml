@@ -1,7 +1,7 @@
 services:
   # Database Service
   postgres:
-    image: postgres:15-alpine
+    image: pgvector/pgvector:pg15
     container_name: retail-engine-db
     environment:
       POSTGRES_DB: default_db
